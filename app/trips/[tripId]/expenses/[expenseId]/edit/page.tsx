@@ -10,15 +10,16 @@ import { requireUser } from "@/lib/session";
 export default async function EditExpensePage({
   params
 }: {
-  params: { tripId: string; expenseId: string };
+  params: Promise<{ tripId: string; expenseId: string }>;
 }) {
+  const { tripId, expenseId } = await params;
   const user = await requireUser();
   const trip = await prisma.trip.findFirst({
-    where: { id: params.tripId, ownerId: user.id },
+    where: { id: tripId, ownerId: user.id },
     include: {
       participants: { orderBy: { createdAt: "asc" } },
       expenses: {
-        where: { id: params.expenseId },
+        where: { id: expenseId },
         include: { shares: true }
       }
     }

@@ -4,10 +4,20 @@ import * as bcrypt from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { calculateEqualShares } from "@/lib/calculations";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  expenseSchema,
+  formString,
+  idSchema,
+  parseDateInput,
+  participantSchema,
+  registerSchema,
+  tripSchema
+} from "@/lib/validation";
 
 async function currentUserId() {
   const session = await getServerSession(authOptions);
@@ -17,41 +27,29 @@ async function currentUserId() {
   return session.user.id;
 }
 
-function optionalDate(value: FormDataEntryValue | null) {
-  if (!value || typeof value !== "string") return null;
-  return value ? new Date(`${value}T00:00:00`) : null;
-}
-
-function requiredDate(value: FormDataEntryValue | null) {
-  if (!value || typeof value !== "string") return new Date();
-  return new Date(`${value}T00:00:00`);
-}
-
-const registerSchema = z
-  .object({
-    username: z.string().trim().min(3).max(80),
-    email: z.string().trim().email().max(120),
-    password: z.string().min(8).max(128),
-    confirmPassword: z.string().min(8).max(128)
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords must match.",
-    path: ["confirmPassword"]
-  });
-
 export async function registerUser(formData: FormData) {
   const parsed = registerSchema.safeParse({
-    username: formData.get("username"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword")
+    username: formString(formData, "username"),
+    email: formString(formData, "email"),
+    password: formString(formData, "password"),
+    confirmPassword: formString(formData, "confirmPassword")
   });
 
   if (!parsed.success) {
+    logger.warn("auth.register.validation_failed");
     redirect("/register?error=invalid");
   }
 
-  const email = parsed.data.email.toLowerCase();
+  const email = parsed.data.email;
+  const rateLimit = checkRateLimit(`register:${email}`, {
+    limit: 5,
+    windowMs: 15 * 60 * 1000
+  });
+  if (!rateLimit.allowed) {
+    logger.warn("auth.register.rate_limited", { email });
+    redirect("/register?error=rate-limit");
+  }
+
   const existingUser = await prisma.user.findFirst({
     where: {
       OR: [{ email }, { username: parsed.data.username }]
@@ -59,6 +57,7 @@ export async function registerUser(formData: FormData) {
   });
 
   if (existingUser) {
+    logger.warn("auth.register.duplicate", { email });
     redirect("/register?error=exists");
   }
 
@@ -70,80 +69,96 @@ export async function registerUser(formData: FormData) {
     }
   });
 
+  logger.info("auth.register.created", { email });
   redirect("/login?registered=1");
 }
-
-const tripSchema = z.object({
-  name: z.string().trim().min(1).max(140),
-  destination: z.string().trim().max(140).optional()
-});
 
 export async function createTrip(formData: FormData) {
   const userId = await currentUserId();
   const parsed = tripSchema.safeParse({
-    name: formData.get("name"),
-    destination: formData.get("destination") || undefined
+    name: formString(formData, "name"),
+    destination: formString(formData, "destination"),
+    startDate: formString(formData, "startDate"),
+    endDate: formString(formData, "endDate")
   });
 
-  if (!parsed.success) redirect("/trips/new?error=invalid");
+  if (!parsed.success) {
+    logger.warn("trip.create.validation_failed", { userId });
+    redirect("/trips/new?error=invalid");
+  }
 
   const trip = await prisma.trip.create({
     data: {
       name: parsed.data.name,
       destination: parsed.data.destination || null,
-      startDate: optionalDate(formData.get("startDate")),
-      endDate: optionalDate(formData.get("endDate")),
+      startDate: parseDateInput(parsed.data.startDate),
+      endDate: parseDateInput(parsed.data.endDate),
       ownerId: userId
     }
   });
 
+  logger.info("trip.create.success", { userId, tripId: trip.id });
   revalidatePath("/dashboard");
   redirect(`/trips/${trip.id}`);
 }
 
 export async function updateTrip(tripId: string, formData: FormData) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  if (!parsedTripId.success) redirect("/dashboard");
+
   const parsed = tripSchema.safeParse({
-    name: formData.get("name"),
-    destination: formData.get("destination") || undefined
+    name: formString(formData, "name"),
+    destination: formString(formData, "destination"),
+    startDate: formString(formData, "startDate"),
+    endDate: formString(formData, "endDate")
   });
 
-  if (!parsed.success) redirect(`/trips/${tripId}/edit?error=invalid`);
+  if (!parsed.success) {
+    logger.warn("trip.update.validation_failed", { userId, tripId });
+    redirect(`/trips/${tripId}/edit?error=invalid`);
+  }
 
   await prisma.trip.updateMany({
     where: { id: tripId, ownerId: userId },
     data: {
       name: parsed.data.name,
       destination: parsed.data.destination || null,
-      startDate: optionalDate(formData.get("startDate")),
-      endDate: optionalDate(formData.get("endDate"))
+      startDate: parseDateInput(parsed.data.startDate),
+      endDate: parseDateInput(parsed.data.endDate)
     }
   });
 
+  logger.info("trip.update.success", { userId, tripId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
 }
 
 export async function deleteTrip(tripId: string) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  if (!parsedTripId.success) redirect("/dashboard");
+
   await prisma.trip.deleteMany({ where: { id: tripId, ownerId: userId } });
+  logger.info("trip.delete.success", { userId, tripId });
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 
-const participantSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  email: z.string().trim().email().max(120).optional().or(z.literal(""))
-});
-
 export async function createParticipant(tripId: string, formData: FormData) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  if (!parsedTripId.success) redirect("/dashboard");
+
   const parsed = participantSchema.safeParse({
-    name: formData.get("name"),
-    email: formData.get("email") || ""
+    name: formString(formData, "name"),
+    email: formString(formData, "email")
   });
 
-  if (!parsed.success) redirect(`/trips/${tripId}?error=participant`);
+  if (!parsed.success) {
+    logger.warn("participant.create.validation_failed", { userId, tripId });
+    redirect(`/trips/${tripId}?error=participant`);
+  }
 
   const trip = await prisma.trip.findFirst({ where: { id: tripId, ownerId: userId } });
   if (!trip) redirect("/dashboard");
@@ -156,6 +171,7 @@ export async function createParticipant(tripId: string, formData: FormData) {
     }
   });
 
+  logger.info("participant.create.success", { userId, tripId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
 }
@@ -166,12 +182,17 @@ export async function updateParticipant(
   formData: FormData
 ) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  const parsedParticipantId = idSchema.safeParse(participantId);
+  if (!parsedTripId.success || !parsedParticipantId.success) redirect("/dashboard");
+
   const parsed = participantSchema.safeParse({
-    name: formData.get("name"),
-    email: formData.get("email") || ""
+    name: formString(formData, "name"),
+    email: formString(formData, "email")
   });
 
   if (!parsed.success) {
+    logger.warn("participant.update.validation_failed", { userId, tripId, participantId });
     redirect(`/trips/${tripId}/participants/${participantId}/edit?error=invalid`);
   }
 
@@ -188,41 +209,47 @@ export async function updateParticipant(
     }
   });
 
+  logger.info("participant.update.success", { userId, tripId, participantId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
 }
 
 export async function deleteParticipant(tripId: string, participantId: string) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  const parsedParticipantId = idSchema.safeParse(participantId);
+  if (!parsedTripId.success || !parsedParticipantId.success) redirect("/dashboard");
+
   await prisma.participant.deleteMany({
     where: {
       id: participantId,
       trip: { id: tripId, ownerId: userId }
     }
   });
+  logger.info("participant.delete.success", { userId, tripId, participantId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
 }
 
-const expenseSchema = z.object({
-  title: z.string().trim().min(1).max(140),
-  amount: z.coerce.number().positive(),
-  category: z.string().trim().min(1).max(80),
-  payerId: z.string().min(1),
-  notes: z.string().trim().max(500).optional()
-});
-
 export async function createExpense(tripId: string, formData: FormData) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  if (!parsedTripId.success) redirect("/dashboard");
+
   const parsed = expenseSchema.safeParse({
-    title: formData.get("title"),
-    amount: formData.get("amount"),
-    category: formData.get("category"),
-    payerId: formData.get("payerId"),
-    notes: formData.get("notes") || undefined
+    title: formString(formData, "title"),
+    amount: formString(formData, "amount"),
+    category: formString(formData, "category"),
+    payerId: formString(formData, "payerId"),
+    date: formString(formData, "date"),
+    notes: formString(formData, "notes"),
+    sharedParticipantIds: formData.getAll("sharedParticipantIds").map(String)
   });
 
-  if (!parsed.success) redirect(`/trips/${tripId}/expenses/new?error=invalid`);
+  if (!parsed.success) {
+    logger.warn("expense.create.validation_failed", { userId, tripId });
+    redirect(`/trips/${tripId}/expenses/new?error=invalid`);
+  }
 
   const trip = await prisma.trip.findFirst({
     where: { id: tripId, ownerId: userId },
@@ -230,7 +257,7 @@ export async function createExpense(tripId: string, formData: FormData) {
   });
   if (!trip) redirect("/dashboard");
 
-  const sharedIds = formData.getAll("sharedParticipantIds").map(String);
+  const sharedIds = parsed.data.sharedParticipantIds;
   const selectedIds = sharedIds.length > 0 ? sharedIds : trip.participants.map((p) => p.id);
   const selectedParticipants = trip.participants.filter((p) => selectedIds.includes(p.id));
 
@@ -238,6 +265,7 @@ export async function createExpense(tripId: string, formData: FormData) {
     !trip.participants.some((p) => p.id === parsed.data.payerId) ||
     selectedParticipants.length === 0
   ) {
+    logger.warn("expense.create.participants_invalid", { userId, tripId });
     redirect(`/trips/${tripId}/expenses/new?error=participants`);
   }
 
@@ -250,7 +278,7 @@ export async function createExpense(tripId: string, formData: FormData) {
       category: parsed.data.category,
       payerId: parsed.data.payerId,
       tripId,
-      date: requiredDate(formData.get("date")),
+      date: parseDateInput(parsed.data.date) ?? new Date(),
       notes: parsed.data.notes || null,
       shares: {
         create: selectedParticipants.map((participant, index) => ({
@@ -261,6 +289,7 @@ export async function createExpense(tripId: string, formData: FormData) {
     }
   });
 
+  logger.info("expense.create.success", { userId, tripId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
 }
@@ -271,15 +300,24 @@ export async function updateExpense(
   formData: FormData
 ) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  const parsedExpenseId = idSchema.safeParse(expenseId);
+  if (!parsedTripId.success || !parsedExpenseId.success) redirect("/dashboard");
+
   const parsed = expenseSchema.safeParse({
-    title: formData.get("title"),
-    amount: formData.get("amount"),
-    category: formData.get("category"),
-    payerId: formData.get("payerId"),
-    notes: formData.get("notes") || undefined
+    title: formString(formData, "title"),
+    amount: formString(formData, "amount"),
+    category: formString(formData, "category"),
+    payerId: formString(formData, "payerId"),
+    date: formString(formData, "date"),
+    notes: formString(formData, "notes"),
+    sharedParticipantIds: formData.getAll("sharedParticipantIds").map(String)
   });
 
-  if (!parsed.success) redirect(`/trips/${tripId}/expenses/${expenseId}/edit?error=invalid`);
+  if (!parsed.success) {
+    logger.warn("expense.update.validation_failed", { userId, tripId, expenseId });
+    redirect(`/trips/${tripId}/expenses/${expenseId}/edit?error=invalid`);
+  }
 
   const trip = await prisma.trip.findFirst({
     where: { id: tripId, ownerId: userId },
@@ -287,13 +325,14 @@ export async function updateExpense(
   });
   if (!trip) redirect("/dashboard");
 
-  const selectedIds = formData.getAll("sharedParticipantIds").map(String);
+  const selectedIds = parsed.data.sharedParticipantIds;
   const selectedParticipants = trip.participants.filter((p) => selectedIds.includes(p.id));
 
   if (
     !trip.participants.some((p) => p.id === parsed.data.payerId) ||
     selectedParticipants.length === 0
   ) {
+    logger.warn("expense.update.participants_invalid", { userId, tripId, expenseId });
     redirect(`/trips/${tripId}/expenses/${expenseId}/edit?error=participants`);
   }
 
@@ -313,7 +352,7 @@ export async function updateExpense(
         amount: parsed.data.amount,
         category: parsed.data.category,
         payerId: parsed.data.payerId,
-        date: requiredDate(formData.get("date")),
+        date: parseDateInput(parsed.data.date) ?? new Date(),
         notes: parsed.data.notes || null,
         shares: {
           create: selectedParticipants.map((participant, index) => ({
@@ -325,18 +364,24 @@ export async function updateExpense(
     })
   ]);
 
+  logger.info("expense.update.success", { userId, tripId, expenseId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
 }
 
 export async function deleteExpense(tripId: string, expenseId: string) {
   const userId = await currentUserId();
+  const parsedTripId = idSchema.safeParse(tripId);
+  const parsedExpenseId = idSchema.safeParse(expenseId);
+  if (!parsedTripId.success || !parsedExpenseId.success) redirect("/dashboard");
+
   await prisma.expense.deleteMany({
     where: {
       id: expenseId,
       trip: { id: tripId, ownerId: userId }
     }
   });
+  logger.info("expense.delete.success", { userId, tripId, expenseId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
 }

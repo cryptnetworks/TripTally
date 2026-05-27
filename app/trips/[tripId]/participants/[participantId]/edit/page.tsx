@@ -9,21 +9,22 @@ import { requireUser } from "@/lib/session";
 export default async function EditParticipantPage({
   params
 }: {
-  params: { tripId: string; participantId: string };
+  params: Promise<{ tripId: string; participantId: string }>;
 }) {
+  const { tripId, participantId } = await params;
   const user = await requireUser();
   const participant = await prisma.participant.findFirst({
     where: {
-      id: params.participantId,
-      trip: { id: params.tripId, ownerId: user.id }
+      id: participantId,
+      trip: { id: tripId, ownerId: user.id }
     },
     include: { trip: true }
   });
 
   if (!participant) notFound();
 
-  const action = updateParticipant.bind(null, params.tripId, participant.id);
-  const removeParticipant = deleteParticipant.bind(null, params.tripId, participant.id);
+  const action = updateParticipant.bind(null, tripId, participant.id);
+  const removeParticipant = deleteParticipant.bind(null, tripId, participant.id);
 
   return (
     <PageShell>

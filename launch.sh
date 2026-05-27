@@ -77,27 +77,6 @@ run_seed() {
   npm run seed || error "Seed command failed."
 }
 
-run_flask() {
-  command_exists python3 || command_exists python || error "Python is not installed or not on PATH."
-  PYTHON_BIN="$(command -v python3 || command -v python)"
-
-  if [ ! -d "venv" ]; then
-    info "Creating Python virtual environment..."
-    "$PYTHON_BIN" -m venv venv || error "Could not create virtual environment."
-  fi
-
-  # shellcheck disable=SC1091
-  source venv/bin/activate
-
-  if [ -f "requirements.txt" ]; then
-    info "Installing Python dependencies..."
-    pip install -r requirements.txt || error "Python dependency install failed."
-  fi
-
-  info "Starting legacy Flask app..."
-  python run.py
-}
-
 case "$APP" in
   next|dev)
     run_next
@@ -108,18 +87,14 @@ case "$APP" in
   seed)
     run_seed
     ;;
-  flask|legacy)
-    run_flask
-    ;;
   help|-h|--help)
     cat <<'HELP'
-Usage: ./launch.sh [next|migrate|seed|flask]
+Usage: ./launch.sh [next|migrate|seed]
 
 Commands:
   next      Start the Next.js app. Default.
   migrate   Run Prisma migrate dev.
   seed      Seed demo data.
-  flask     Start the legacy Flask app.
 HELP
     ;;
   *)

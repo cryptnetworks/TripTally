@@ -6,10 +6,15 @@ import { dateInputValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 
-export default async function EditTripPage({ params }: { params: { tripId: string } }) {
+export default async function EditTripPage({
+  params
+}: {
+  params: Promise<{ tripId: string }>;
+}) {
+  const { tripId } = await params;
   const user = await requireUser();
   const trip = await prisma.trip.findFirst({
-    where: { id: params.tripId, ownerId: user.id }
+    where: { id: tripId, ownerId: user.id }
   });
   if (!trip) notFound();
 

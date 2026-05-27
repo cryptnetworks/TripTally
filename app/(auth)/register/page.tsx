@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { registerUser } from "@/lib/actions";
 
-export default function RegisterPage({
+export default async function RegisterPage({
   searchParams
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
+  const query = await searchParams;
   const errorMessage =
-    searchParams.error === "exists"
+    query.error === "exists"
       ? "A user with that username or email already exists."
-      : searchParams.error
+      : query.error
         ? "Check the form and try again."
         : "";
 

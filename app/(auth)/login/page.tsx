@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { LoginForm } from "@/components/AuthForm";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams
 }: {
-  searchParams: { registered?: string };
+  searchParams: Promise<{ registered?: string }>;
 }) {
+  const query = await searchParams;
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <section className="card w-full max-w-md p-6">
@@ -14,7 +16,7 @@ export default function LoginPage({
         <p className="mt-2 text-sm text-muted">
           Track trip costs, split expenses, and settle up clearly.
         </p>
-        {searchParams.registered ? (
+        {query.registered ? (
           <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
             Account created. Login to continue.
           </p>
