@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+*.db
+.env
+instance/
+.DS_Store
+node_modules
+.next/
+out/
+*.tsbuildinfo
+prisma/dev.db

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} | TripTally{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-9 col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h1 class="h4 mb-1">{{ title }}</h1>
+            <p class="text-muted mb-0">Give this trip a name, destination, and dates.</p>
+          </div>
+        </div>
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="form-floating mb-3">
+            {{ form.name(class_='form-control', placeholder='Trip name') }}
+            {{ form.name.label(class_='form-label') }}
+          </div>
+          <div class="form-floating mb-3">
+            {{ form.destination(class_='form-control', placeholder='Destination') }}
+            {{ form.destination.label(class_='form-label') }}
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <div class="form-floating">
+                {{ form.start_date(class_='form-control', placeholder='Start date') }}
+                {{ form.start_date.label(class_='form-label') }}
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-floating">
+                {{ form.end_date(class_='form-control', placeholder='End date') }}
+                {{ form.end_date.label(class_='form-label') }}
+              </div>
+            </div>
+          </div>
+          {{ form.submit(class_='btn btn-primary w-100 btn-lg') }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

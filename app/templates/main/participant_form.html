@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Add Participant | TripTally{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-9 col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <h1 class="h4 mb-2">Add Participant</h1>
+        <p class="text-muted mb-4">Invite someone to your trip and track their share of expenses.</p>
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="form-floating mb-3">
+            {{ form.name(class_='form-control', placeholder='Participant name') }}
+            {{ form.name.label(class_='form-label') }}
+          </div>
+          <div class="form-floating mb-4">
+            {{ form.email(class_='form-control', placeholder='Email address') }}
+            {{ form.email.label(class_='form-label') }}
+          </div>
+          {{ form.submit(class_='btn btn-primary w-100 btn-lg') }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
