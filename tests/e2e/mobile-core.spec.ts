@@ -32,7 +32,12 @@ test("mobile user can register, create a trip, add a participant, and add an exp
   await page.getByPlaceholder("Email optional").fill("alice@example.com");
   await page.getByRole("button", { name: "Add" }).click();
 
-  await expect(page.getByText("Alice")).toBeVisible();
+  await expect(
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Participants" }) })
+      .getByText("Alice", { exact: true })
+  ).toBeVisible();
   await page.getByRole("link", { name: "Add Expense" }).first().click();
   await page.getByLabel("Title").fill("Coffee");
   await page.getByLabel("Amount").fill("12.50");
@@ -40,6 +45,6 @@ test("mobile user can register, create a trip, add a participant, and add an exp
   await page.getByRole("button", { name: "Record expense" }).click();
 
   await expect(page.getByText("Coffee")).toBeVisible();
-  await expect(page.getByText("$12.50")).toBeVisible();
+  await expect(page.getByText("$12.50").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Balances" })).toBeVisible();
 });

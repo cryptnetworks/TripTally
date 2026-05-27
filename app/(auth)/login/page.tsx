@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/AuthForm";
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ registered?: string }>;
+  searchParams: Promise<{ registered?: string; reset?: string }>;
 }) {
   const query = await searchParams;
 
@@ -21,9 +21,19 @@ export default async function LoginPage({
             Account created. Login to continue.
           </p>
         ) : null}
+        {query.reset ? (
+          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
+            Password updated. Login with your new password.
+          </p>
+        ) : null}
         <div className="mt-6">
           <LoginForm />
         </div>
+        <p className="mt-4 text-center text-sm">
+          <Link className="font-semibold text-ocean" href="/forgot-password">
+            Forgot password?
+          </Link>
+        </p>
         <p className="mt-5 text-center text-sm text-muted">
           Need an account?{" "}
           <Link className="font-semibold text-ocean" href="/register">

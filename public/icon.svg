@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TripTally">
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <path fill="#fff" d="M136 144h240v64H136zM136 240h240v48H136zM136 320h144v48H136z"/>
+  <circle cx="352" cy="344" r="40" fill="#f7f9fb"/>
+  <path fill="#0f766e" d="M340 345l-18-18 17-17 18 18 35-35 17 17-52 52z"/>
+</svg>

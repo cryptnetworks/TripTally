@@ -37,6 +37,21 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(128)
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.email().trim().toLowerCase().max(120)
+});
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().trim().min(32).max(256),
+    password: z.string().min(8).max(128),
+    confirmPassword: z.string().min(8).max(128)
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match.",
+    path: ["confirmPassword"]
+  });
+
 export const tripSchema = z
   .object({
     name: z.string().trim().min(1).max(140),

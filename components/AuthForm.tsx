@@ -34,17 +34,17 @@ export function LoginForm() {
   }
 
   return (
-    <form className="grid gap-4" onSubmit={onSubmit}>
+    <form className="grid gap-4" data-testid="login-form" onSubmit={onSubmit}>
       {error ? <p className="rounded-lg bg-red-50 p-3 text-sm text-coral">{error}</p> : null}
       <div>
         <label className="label" htmlFor="email">Email</label>
-        <input className="field" id="email" name="email" type="email" autoComplete="email" required />
+        <input className="field" data-testid="login-email" id="email" name="email" type="email" autoComplete="email" required />
       </div>
       <div>
         <label className="label" htmlFor="password">Password</label>
-        <input className="field" id="password" name="password" type="password" autoComplete="current-password" required />
+        <input className="field" data-testid="login-password" id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
-      <button className="btn-primary" disabled={isPending} type="submit">
+      <button className="btn-primary" data-testid="login-submit" disabled={isPending} type="submit">
         {isPending ? "Signing in..." : "Login"}
       </button>
     </form>

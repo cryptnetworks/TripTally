@@ -27,7 +27,11 @@ export function PageHeader({ eyebrow, title, description, action }: PageHeaderPr
         ) : null}
       </div>
       {action ? (
-        <Link className="btn-primary w-full sm:w-auto" href={action.href}>
+        <Link
+          className="btn-primary w-full sm:w-auto"
+          data-testid={action.href === "/trips/new" ? "dashboard-create-trip" : undefined}
+          href={action.href}
+        >
           {action.label}
         </Link>
       ) : null}

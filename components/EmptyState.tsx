@@ -21,7 +21,11 @@ export function EmptyState({
       <h2 className="text-xl font-semibold text-ink">{title}</h2>
       <p className="mt-2 max-w-md text-sm leading-6 text-muted">{description}</p>
       {actionLabel && actionHref ? (
-        <Link className="btn-primary mt-5" href={actionHref}>
+        <Link
+          className="btn-primary mt-5"
+          data-testid={actionHref === "/trips/new" ? "dashboard-create-trip" : undefined}
+          href={actionHref}
+        >
           {actionLabel}
         </Link>
       ) : null}

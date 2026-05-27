@@ -1,0 +1,30 @@
+services:
+  triptally:
+    build:
+      context: .
+    image: triptally:latest
+    container_name: triptally
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      TRIPTALLY_DOCKER: "1"
+      # Keep SQLite inside the mounted volume even when the local .env uses file:./dev.db.
+      TRIPTALLY_SQLITE_PATH: /app/data/triptally.db
+      TRIPTALLY_ALLOW_INSECURE_SECRET: ${TRIPTALLY_ALLOW_INSECURE_SECRET:-}
+    ports:
+      - "${TRIPTALLY_HOST_PORT:-3000}:3000"
+    volumes:
+      - triptally_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+volumes:
+  triptally_data:

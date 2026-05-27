@@ -10,6 +10,7 @@ import { SettlementList } from "@/components/SettlementList";
 import { calculateBalances } from "@/lib/calculations";
 import { createParticipant, deleteParticipant, deleteTrip } from "@/lib/actions";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 
@@ -37,6 +38,13 @@ export default async function TripDetailPage({
   if (!trip) notFound();
 
   const { balances, settlements } = calculateBalances(trip.participants, trip.expenses);
+  logger.info("settlement.calculate.success", {
+    userId: user.id,
+    tripId: trip.id,
+    participants: trip.participants.length,
+    expenses: trip.expenses.length,
+    settlements: settlements.length
+  });
   const totalCost = trip.expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const addParticipant = createParticipant.bind(null, trip.id);
   const removeTrip = deleteTrip.bind(null, trip.id);
@@ -50,10 +58,10 @@ export default async function TripDetailPage({
       />
 
       <div className="mb-5 flex flex-col gap-2 sm:flex-row">
-        <Link className="btn-primary" href={`/trips/${trip.id}/expenses/new`}>Add Expense</Link>
-        <Link className="btn-secondary" href={`/trips/${trip.id}/edit`}>Edit Trip</Link>
+        <Link className="btn-primary" data-testid="add-expense" href={`/trips/${trip.id}/expenses/new`}>Add Expense</Link>
+        <Link className="btn-secondary" data-testid="edit-trip" href={`/trips/${trip.id}/edit`}>Edit Trip</Link>
         <form action={removeTrip}>
-          <button className="btn-danger w-full sm:w-auto" type="submit">Delete Trip</button>
+          <button className="btn-danger w-full sm:w-auto" data-testid="delete-trip" type="submit">Delete Trip</button>
         </form>
       </div>
 
@@ -85,10 +93,10 @@ export default async function TripDetailPage({
                 {trip.participants.length} total
               </span>
             </div>
-            <form className="mb-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" action={addParticipant}>
-              <input className="field" name="name" placeholder="Name" maxLength={120} required />
-              <input className="field" name="email" placeholder="Email optional" type="email" maxLength={120} />
-              <button className="btn-primary" type="submit">Add</button>
+            <form className="mb-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" action={addParticipant} data-testid="participant-form">
+              <input className="field" data-testid="participant-name" name="name" placeholder="Name" maxLength={120} required />
+              <input className="field" data-testid="participant-email" name="email" placeholder="Email optional" type="email" maxLength={120} />
+              <button className="btn-primary" data-testid="participant-submit" type="submit">Add</button>
             </form>
             {trip.participants.length === 0 ? (
               <p className="text-sm text-muted">Add travelers before recording expenses.</p>
@@ -97,13 +105,13 @@ export default async function TripDetailPage({
                 {trip.participants.map((participant) => {
                   const removeParticipant = deleteParticipant.bind(null, trip.id, participant.id);
                   return (
-                    <div key={participant.id} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+                    <div key={participant.id} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3" data-testid="participant-card">
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-ink">{participant.name}</p>
                         <p className="truncate text-sm text-muted">{participant.email || "No email provided"}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <Link className="btn-secondary min-h-9 px-3 py-1.5" href={`/trips/${trip.id}/participants/${participant.id}/edit`}>
+                        <Link className="btn-secondary min-h-9 px-3 py-1.5" data-testid="participant-edit" href={`/trips/${trip.id}/participants/${participant.id}/edit`}>
                           Edit
                         </Link>
                         <DeleteButton action={removeParticipant} label={`Delete ${participant.name}`} />
@@ -118,7 +126,7 @@ export default async function TripDetailPage({
           <section className="card p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-ink">Expense history</h2>
-              <Link className="text-sm font-semibold text-ocean" href={`/trips/${trip.id}/expenses/new`}>
+              <Link className="text-sm font-semibold text-ocean" data-testid="add-expense-inline" href={`/trips/${trip.id}/expenses/new`}>
                 Add expense
               </Link>
             </div>

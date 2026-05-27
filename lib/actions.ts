@@ -7,15 +7,18 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { calculateEqualShares } from "@/lib/calculations";
 import { logger } from "@/lib/logger";
+import { completePasswordReset, createPasswordResetForUser } from "@/lib/password-reset";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   expenseSchema,
+  forgotPasswordSchema,
   formString,
   idSchema,
   parseDateInput,
   participantSchema,
   registerSchema,
+  resetPasswordSchema,
   tripSchema
 } from "@/lib/validation";
 
@@ -71,6 +74,57 @@ export async function registerUser(formData: FormData) {
 
   logger.info("auth.register.created", { email });
   redirect("/login?registered=1");
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formString(formData, "email")
+  });
+
+  if (!parsed.success) {
+    logger.warn("auth.password_reset.request.validation_failed");
+    redirect("/forgot-password?sent=1");
+  }
+
+  const email = parsed.data.email;
+  const rateLimit = checkRateLimit(`password-reset:${email}`, {
+    limit: 3,
+    windowMs: 60 * 60 * 1000
+  });
+
+  if (!rateLimit.allowed) {
+    logger.warn("auth.password_reset.request.rate_limited", { email });
+    redirect("/forgot-password?sent=1");
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user) {
+    await createPasswordResetForUser(user);
+  } else {
+    logger.info("auth.password_reset.request.accepted_unknown_email");
+  }
+
+  redirect("/forgot-password?sent=1");
+}
+
+export async function resetPassword(formData: FormData) {
+  const parsed = resetPasswordSchema.safeParse({
+    token: formString(formData, "token"),
+    password: formString(formData, "password"),
+    confirmPassword: formString(formData, "confirmPassword")
+  });
+
+  if (!parsed.success) {
+    logger.warn("auth.password_reset.validation_failed");
+    redirect(`/reset-password?token=${encodeURIComponent(formString(formData, "token"))}&error=invalid`);
+  }
+
+  const success = await completePasswordReset(parsed.data.token, parsed.data.password);
+  if (!success) {
+    redirect("/reset-password?error=invalid");
+  }
+
+  redirect("/login?reset=1");
 }
 
 export async function createTrip(formData: FormData) {

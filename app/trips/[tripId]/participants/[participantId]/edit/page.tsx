@@ -33,16 +33,16 @@ export default async function EditParticipantPage({
         <div className="mb-4 flex justify-end">
           <DeleteButton action={removeParticipant} label={`Delete ${participant.name}`} />
         </div>
-        <form className="grid gap-4" action={action}>
+        <form className="grid gap-4" action={action} data-testid="participant-form">
           <div>
             <label className="label" htmlFor="name">Name</label>
-            <input className="field" id="name" name="name" defaultValue={participant.name} maxLength={120} required />
+            <input className="field" data-testid="participant-name" id="name" name="name" defaultValue={participant.name} maxLength={120} required />
           </div>
           <div>
             <label className="label" htmlFor="email">Email</label>
-            <input className="field" id="email" name="email" type="email" defaultValue={participant.email || ""} maxLength={120} />
+            <input className="field" data-testid="participant-email" id="email" name="email" type="email" defaultValue={participant.email || ""} maxLength={120} />
           </div>
-          <button className="btn-primary" type="submit">Save participant</button>
+          <button className="btn-primary" data-testid="participant-submit" type="submit">Save participant</button>
         </form>
       </section>
     </PageShell>

@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+# Install dependencies in a dedicated stage so app source changes do not
+# invalidate the dependency cache.
 FROM node:22-alpine AS deps
 WORKDIR /app
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
@@ -7,6 +9,8 @@ RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
 RUN npm install --no-audit --no-fund --loglevel=error
 
+# Build with the same Alpine runtime family used by the final image. Prisma is
+# generated here so the production image always contains a matching client.
 FROM node:22-alpine AS builder
 WORKDIR /app
 ENV DATABASE_URL=file:/app/data/triptally.db
@@ -19,12 +23,15 @@ RUN npx prisma generate
 RUN npm run build
 RUN npm prune --omit=dev --no-audit --no-fund --loglevel=error
 
+# Runtime image: non-root user, production env, persisted SQLite path, and a
+# startup entrypoint that validates config and applies migrations.
 FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV TRIPTALLY_DOCKER=1
 ENV DATABASE_URL=file:/app/data/triptally.db
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
@@ -40,6 +47,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN mkdir -p /app/data \

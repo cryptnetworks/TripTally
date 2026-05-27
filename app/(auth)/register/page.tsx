@@ -25,24 +25,24 @@ export default async function RegisterPage({
         {errorMessage ? (
           <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-coral">{errorMessage}</p>
         ) : null}
-        <form className="mt-6 grid gap-4" action={registerUser}>
+        <form className="mt-6 grid gap-4" action={registerUser} data-testid="register-form">
           <div>
             <label className="label" htmlFor="username">Username</label>
-            <input className="field" id="username" name="username" minLength={3} maxLength={80} required />
+            <input className="field" data-testid="register-username" id="username" name="username" minLength={3} maxLength={80} required />
           </div>
           <div>
             <label className="label" htmlFor="email">Email</label>
-            <input className="field" id="email" name="email" type="email" maxLength={120} required />
+            <input className="field" data-testid="register-email" id="email" name="email" type="email" maxLength={120} required />
           </div>
           <div>
             <label className="label" htmlFor="password">Password</label>
-            <input className="field" id="password" name="password" type="password" minLength={8} maxLength={128} required />
+            <input className="field" data-testid="register-password" id="password" name="password" type="password" minLength={8} maxLength={128} required />
           </div>
           <div>
             <label className="label" htmlFor="confirmPassword">Confirm password</label>
-            <input className="field" id="confirmPassword" name="confirmPassword" type="password" minLength={8} maxLength={128} required />
+            <input className="field" data-testid="register-confirm-password" id="confirmPassword" name="confirmPassword" type="password" minLength={8} maxLength={128} required />
           </div>
-          <button className="btn-primary" type="submit">Create account</button>
+          <button className="btn-primary" data-testid="register-submit" type="submit">Create account</button>
         </form>
         <p className="mt-5 text-center text-sm text-muted">
           Already have an account?{" "}

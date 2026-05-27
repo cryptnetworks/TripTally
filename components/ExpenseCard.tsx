@@ -13,7 +13,7 @@ type ExpenseCardProps = {
 
 export function ExpenseCard({ expense, tripId }: ExpenseCardProps) {
   return (
-    <article className="rounded-lg border border-line bg-white p-4">
+    <article className="rounded-lg border border-line bg-white p-4" data-testid="expense-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold text-ink">{expense.title}</h3>
