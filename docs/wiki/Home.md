@@ -28,6 +28,8 @@ docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862
 ## Main Capabilities
 
 - Trip, participant, expense, balance, and settlement tracking
+- Collaborative trip memberships with owner/admin/member/viewer permissions
+- Member-created expenses with draft, submitted, disputed, approved, and settled states
 - Credentials login with email verification and password reset
 - Email-code or authenticator-app MFA
 - Admin portal for users, auth providers, settings, and audit logs

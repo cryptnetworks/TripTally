@@ -6,6 +6,8 @@ participants, balances, and settlement suggestions.
 ## Features
 
 - Trip, participant, expense, balance, and settlement tracking
+- Collaborative trip memberships with owner/admin/member/viewer permissions
+- Member-created expenses with draft, submitted, disputed, approved, and settled states
 - Credentials login with email verification and password reset
 - Email-code or authenticator-app MFA
 - Admin portal for users, auth providers, settings, and audit logs
@@ -248,6 +250,27 @@ https://app.example.com/api/auth/oauth/facebook/callback
 ```
 
 Provider client secrets are encrypted with `AUTH_CONFIG_ENCRYPTION_KEY`.
+
+## Collaborative Expenses
+
+Trip owners are recorded as `owner` members when trips are created. Owners and
+trip admins can manage trip settings, participants, and all expenses. Members can
+view trip expenses and balances, add their own expenses, and edit or delete their
+own expenses until those expenses are marked `settled`. Viewers can read trip
+details without changing the ledger.
+
+Expense statuses control visibility and balances:
+
+- `draft` is visible only to the creator and trip managers and is excluded from
+  balances.
+- `submitted`, `approved`, `disputed`, and `settled` are visible to trip members
+  and included in balances.
+- `settled` expenses are locked from normal edits and deletes.
+
+Participant records can link to app users by matching email. Linked users become
+trip members automatically when a manager adds or updates the participant.
+Expense, participant, and trip changes are written to the audit log with trip
+context.
 
 ## Local Development
 

@@ -7,26 +7,31 @@ datasource db {
 }
 
 model User {
-  id                  String               @id @default(cuid())
-  username            String               @unique
-  email               String               @unique
-  passwordHash        String
-  role                String               @default("user")
-  disabledAt          DateTime?
-  lastLoginAt         DateTime?
-  emailVerifiedAt     DateTime?
-  twoFactorMethod     String               @default("none")
-  authenticatorEnabled Boolean              @default(false)
+  id                           String                   @id @default(cuid())
+  username                     String                   @unique
+  email                        String                   @unique
+  passwordHash                 String
+  role                         String                   @default("user")
+  disabledAt                   DateTime?
+  lastLoginAt                  DateTime?
+  emailVerifiedAt              DateTime?
+  twoFactorMethod              String                   @default("none")
+  authenticatorEnabled         Boolean                  @default(false)
   authenticatorSecretEncrypted String?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  trips               Trip[]
-  passwordResetTokens PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  twoFactorChallenges TwoFactorChallenge[]
-  authAccounts        UserAuthAccount[]
-  oauthLoginTokens    OAuthLoginToken[]
-  auditLogs           AuditLog[]           @relation("AuditActor")
+  createdAt                    DateTime                 @default(now())
+  updatedAt                    DateTime                 @updatedAt
+  trips                        Trip[]
+  tripMemberships              TripMember[]
+  participantProfiles          Participant[]
+  expensesCreated              Expense[]                @relation("ExpenseCreator")
+  expensesPaid                 Expense[]                @relation("ExpensePaidByUser")
+  expensesUpdated              Expense[]                @relation("ExpenseUpdater")
+  passwordResetTokens          PasswordResetToken[]
+  emailVerificationTokens      EmailVerificationToken[]
+  twoFactorChallenges          TwoFactorChallenge[]
+  authAccounts                 UserAuthAccount[]
+  oauthLoginTokens             OAuthLoginToken[]
+  auditLogs                    AuditLog[]               @relation("AuditActor")
 
   @@index([role])
   @@index([disabledAt])
@@ -79,18 +84,26 @@ model OAuthLoginToken {
 model AuditLog {
   id           String   @id @default(cuid())
   actorUserId  String?
+  tripId       String?
   action       String
   targetType   String
   targetId     String?
+  entityType   String?
+  entityId     String?
+  beforeJson   String?
+  afterJson    String?
   metadataJson String?
   ipAddress    String?
   userAgent    String?
   createdAt    DateTime @default(now())
   actor        User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  trip         Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
 
   @@index([actorUserId])
+  @@index([tripId])
   @@index([action])
   @@index([targetType, targetId])
+  @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
 }
@@ -156,11 +169,29 @@ model Trip {
   updatedAt    DateTime      @updatedAt
   ownerId      String
   owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members      TripMember[]
   participants Participant[]
   expenses     Expense[]
+  auditLogs    AuditLog[]
 
   @@index([ownerId])
   @@map("trips")
+}
+
+model TripMember {
+  id        String   @id @default(cuid())
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tripId    String
+  userId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@index([userId])
+  @@index([tripId, role])
+  @@map("trip_members")
 }
 
 model Participant {
@@ -170,31 +201,45 @@ model Participant {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   tripId       String
+  userId       String?
   trip         Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user         User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   expensesPaid Expense[]      @relation("ExpensePayer")
   shares       ExpenseShare[]
 
   @@index([tripId])
+  @@index([userId])
   @@map("participants")
 }
 
 model Expense {
-  id        String         @id @default(cuid())
-  title     String
-  amount    Decimal
-  category  String
-  date      DateTime
-  notes     String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  payerId   String
-  tripId    String
-  payer     Participant    @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Cascade)
-  trip      Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  shares    ExpenseShare[]
+  id              String         @id @default(cuid())
+  title           String
+  amount          Decimal
+  category        String
+  date            DateTime
+  notes           String?
+  status          String         @default("submitted")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  payerId         String
+  tripId          String
+  createdByUserId String?
+  paidByUserId    String?
+  updatedByUserId String?
+  payer           Participant    @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Cascade)
+  trip            Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  createdBy       User?          @relation("ExpenseCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  paidByUser      User?          @relation("ExpensePaidByUser", fields: [paidByUserId], references: [id], onDelete: SetNull)
+  updatedBy       User?          @relation("ExpenseUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  shares          ExpenseShare[]
 
   @@index([tripId])
   @@index([payerId])
+  @@index([createdByUserId])
+  @@index([paidByUserId])
+  @@index([updatedByUserId])
+  @@index([tripId, status])
   @@map("expenses")
 }
 

@@ -5,6 +5,7 @@ export function testParticipant(id: string, name: string) {
     id,
     name,
     email: null,
+    userId: null,
     createdAt: new Date("2026-01-01T00:00:00"),
     updatedAt: new Date("2026-01-01T00:00:00"),
     tripId: "trip-1"
@@ -29,10 +30,14 @@ export function testExpense({
     category: "Food",
     date: new Date("2026-01-02T00:00:00"),
     notes: null,
+    status: "submitted",
     createdAt: new Date("2026-01-02T00:00:00"),
     updatedAt: new Date("2026-01-02T00:00:00"),
     payerId,
     tripId: "trip-1",
+    createdByUserId: null,
+    paidByUserId: null,
+    updatedByUserId: null,
     shares: shares.map((share, index) => ({
       id: `${id}-share-${index}`,
       expenseId: id,

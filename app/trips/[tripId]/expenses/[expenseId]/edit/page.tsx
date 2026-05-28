@@ -6,6 +6,12 @@ import { deleteExpense, updateExpense } from "@/lib/actions";
 import { categories, dateInputValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { requireTripAccess } from "@/lib/trip-access";
+import {
+  allowedExpenseStatusesForRole,
+  canEditExpense,
+  isTripManager
+} from "@/lib/trip-permissions";
 
 export default async function EditExpensePage({
   params
@@ -14,8 +20,9 @@ export default async function EditExpensePage({
 }) {
   const { tripId, expenseId } = await params;
   const user = await requireUser();
+  const resolved = await requireTripAccess(tripId, user.id);
   const trip = await prisma.trip.findFirst({
-    where: { id: tripId, ownerId: user.id },
+    where: { id: tripId },
     include: {
       participants: { orderBy: { createdAt: "asc" } },
       expenses: {
@@ -28,9 +35,14 @@ export default async function EditExpensePage({
   if (!trip || trip.expenses.length === 0) notFound();
 
   const expense = trip.expenses[0];
+  if (!canEditExpense(resolved.access.role, user.id, expense)) notFound();
   const sharedIds = new Set(expense.shares.map((share) => share.participantId));
   const action = updateExpense.bind(null, trip.id, expense.id);
   const removeExpense = deleteExpense.bind(null, trip.id, expense.id);
+  const payerOptions = isTripManager(resolved.access.role)
+    ? trip.participants
+    : trip.participants.filter((participant) => participant.userId === user.id);
+  const statusOptions = allowedExpenseStatusesForRole(resolved.access.role);
 
   return (
     <PageShell>
@@ -108,7 +120,7 @@ export default async function EditExpensePage({
                 defaultValue={expense.payerId}
                 required
               >
-                {trip.participants.map((participant) => (
+                {payerOptions.map((participant) => (
                   <option key={participant.id} value={participant.id}>
                     {participant.name}
                   </option>
@@ -129,6 +141,18 @@ export default async function EditExpensePage({
                 required
               />
             </div>
+          </div>
+          <div>
+            <label className="label" htmlFor="status">
+              Status
+            </label>
+            <select className="field" id="status" name="status" defaultValue={expense.status}>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
           </div>
           <fieldset>
             <legend className="label">Shared by</legend>

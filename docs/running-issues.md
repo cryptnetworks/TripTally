@@ -69,3 +69,13 @@
 - Fix applied: Ran `npm update picomatch` and verified the installed tree resolves to patched versions: `picomatch@2.3.2` for the micromatch branch and `picomatch@4.0.4` for Vite/Vitest branches.
 - Verification commands: `npm ls picomatch --all`, `npm audit --audit-level=high`, `npm audit --json`, `npm run security:scan`, `docker build -t triptally:latest .`.
 - Status: Fixed.
+
+## Issue 8: Collaborative purchase permissions
+
+- Date encountered: 2026-05-28
+- Error summary: Trip and expense workflows were owner-only, so trip members could not collaboratively add or manage their own purchases.
+- Root cause: Trips had an `ownerId` but no membership table, expenses did not track creator/updater/status, and audit logs were not trip-scoped.
+- Files changed: Prisma schema and migration, trip/participant/expense server actions, trip list/detail pages, expense forms, expense cards, permission helpers, tests, and documentation.
+- Fix applied: Added `TripMember`, participant user links, expense ownership/status fields, trip-scoped audit metadata, server-side permission helpers, collaborative expense filters, activity feed, and tests for permission/status behavior.
+- Verification commands: `npx prisma validate`, `npm run lint`, `npm run typecheck`, `npm test`.
+- Status: In progress on `feature/collaborative-purchases-permissions`.

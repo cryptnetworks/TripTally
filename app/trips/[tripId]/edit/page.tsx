@@ -5,12 +5,16 @@ import { updateTrip } from "@/lib/actions";
 import { dateInputValue } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { requireTripAccess } from "@/lib/trip-access";
+import { isTripManager } from "@/lib/trip-permissions";
 
 export default async function EditTripPage({ params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await params;
   const user = await requireUser();
+  const resolved = await requireTripAccess(tripId, user.id);
+  if (!isTripManager(resolved.access.role)) notFound();
   const trip = await prisma.trip.findFirst({
-    where: { id: tripId, ownerId: user.id }
+    where: { id: tripId }
   });
   if (!trip) notFound();
 
