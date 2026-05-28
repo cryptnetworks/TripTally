@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { categories } from "@/lib/format";
+import { expenseStatuses } from "@/lib/trip-permissions";
 
 export const idSchema = z.string().trim().min(1).max(128);
 
@@ -140,6 +141,7 @@ export const expenseSchema = z.object({
   category: z.enum(categories),
   payerId: idSchema,
   date: dateStringSchema,
+  status: z.enum(expenseStatuses).optional().default("submitted"),
   notes: optionalText(500),
   sharedParticipantIds: z.array(idSchema).optional().default([])
 });

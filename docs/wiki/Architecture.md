@@ -25,6 +25,7 @@ Main entities:
 
 - `User`
 - `Trip`
+- `TripMember`
 - `Participant`
 - `Expense`
 - `ExpenseShare`
@@ -46,5 +47,22 @@ Main entities:
 - `app/api/auth` - NextAuth, custom login, OAuth start/callback
 - `lib/actions` - server actions grouped by domain
 - `lib/auth.ts` - NextAuth options and credential flow
+- `lib/trip-access.ts` - trip membership lookup and manager enforcement
+- `lib/trip-permissions.ts` - pure permission and expense status rules
 - `lib/validation.ts` - Zod schemas and form helpers
 - `lib/calculations.ts` - expense/balance calculations
+
+## Collaborative Expense Model
+
+Trips have explicit memberships in `TripMember`. The trip owner is also recorded
+as an `owner` member for consistent access checks. Participant records may link
+to app users through `Participant.userId`; when a manager adds a participant
+whose email matches an account, that user is added as a trip member.
+
+Expenses track `createdByUserId`, `paidByUserId`, `updatedByUserId`, and
+`status`. Draft expenses are private to the creator and managers and are not
+included in balances. Submitted, approved, disputed, and settled expenses are
+included in balances. Settled expenses are locked from normal edits and deletes.
+
+Trip, participant, and expense changes write trip-scoped audit log rows with
+before/after JSON where practical.

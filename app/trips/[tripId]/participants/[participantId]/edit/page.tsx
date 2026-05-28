@@ -5,6 +5,8 @@ import { PageShell } from "@/components/PageShell";
 import { deleteParticipant, updateParticipant } from "@/lib/actions";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { requireTripAccess } from "@/lib/trip-access";
+import { isTripManager } from "@/lib/trip-permissions";
 
 export default async function EditParticipantPage({
   params
@@ -13,10 +15,12 @@ export default async function EditParticipantPage({
 }) {
   const { tripId, participantId } = await params;
   const user = await requireUser();
+  const resolved = await requireTripAccess(tripId, user.id);
+  if (!isTripManager(resolved.access.role)) notFound();
   const participant = await prisma.participant.findFirst({
     where: {
       id: participantId,
-      trip: { id: tripId, ownerId: user.id }
+      tripId
     },
     include: { trip: true }
   });

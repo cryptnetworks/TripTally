@@ -4,9 +4,18 @@ import type { Participant } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCurrentUserId } from "@/lib/actions/session";
+import { writeAuditLog } from "@/lib/audit";
 import { calculateEqualShares } from "@/lib/calculations";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { requireTripAccess } from "@/lib/trip-access";
+import {
+  canCreateTripExpense,
+  canDeleteExpense,
+  canEditExpense,
+  coerceExpenseStatusForRole,
+  isTripManager
+} from "@/lib/trip-permissions";
 import { expenseSchema, formString, idSchema, parseDateInput } from "@/lib/validation";
 
 function parseExpenseForm(formData: FormData) {
@@ -16,6 +25,7 @@ function parseExpenseForm(formData: FormData) {
     category: formString(formData, "category"),
     payerId: formString(formData, "payerId"),
     date: formString(formData, "date"),
+    status: formString(formData, "status") || "submitted",
     notes: formString(formData, "notes"),
     sharedParticipantIds: formData.getAll("sharedParticipantIds").map(String)
   });
@@ -34,6 +44,34 @@ function selectedExpenseParticipants(
   return participants.filter((participant) => selectedIds.includes(participant.id));
 }
 
+function userCanUsePayer(
+  role: string,
+  userId: string,
+  payer: Pick<Participant, "userId"> | undefined
+) {
+  return isTripManager(role) || payer?.userId === userId;
+}
+
+function expenseSnapshot(expense: {
+  title: string;
+  amount: unknown;
+  category: string;
+  payerId: string;
+  date: Date;
+  notes: string | null;
+  status: string;
+}) {
+  return {
+    title: expense.title,
+    amount: Number(expense.amount),
+    category: expense.category,
+    payerId: expense.payerId,
+    date: expense.date.toISOString(),
+    notes: expense.notes,
+    status: expense.status
+  };
+}
+
 export async function createExpense(tripId: string, formData: FormData) {
   const userId = await requireCurrentUserId();
   const parsedTripId = idSchema.safeParse(tripId);
@@ -45,8 +83,14 @@ export async function createExpense(tripId: string, formData: FormData) {
     redirect(`/trips/${tripId}/expenses/new?error=invalid`);
   }
 
+  const resolved = await requireTripAccess(tripId, userId);
+  if (!canCreateTripExpense(resolved.access.role)) {
+    logger.warn("expense.create.denied", { userId, tripId, role: resolved.access.role });
+    redirect(`/trips/${tripId}?error=forbidden`);
+  }
+
   const trip = await prisma.trip.findFirst({
-    where: { id: tripId, ownerId: userId },
+    where: { id: tripId },
     include: { participants: true }
   });
   if (!trip) redirect("/dashboard");
@@ -57,23 +101,31 @@ export async function createExpense(tripId: string, formData: FormData) {
     true
   );
 
-  if (
-    !trip.participants.some((participant) => participant.id === parsed.data.payerId) ||
-    selectedParticipants.length === 0
-  ) {
+  const payer = trip.participants.find((participant) => participant.id === parsed.data.payerId);
+  if (!payer || selectedParticipants.length === 0) {
     logger.warn("expense.create.participants_invalid", { userId, tripId });
     redirect(`/trips/${tripId}/expenses/new?error=participants`);
   }
 
-  const shares = calculateEqualShares(parsed.data.amount, selectedParticipants.length);
+  if (!userCanUsePayer(resolved.access.role, userId, payer)) {
+    logger.warn("expense.create.payer_denied", { userId, tripId, payerId: payer.id });
+    redirect(`/trips/${tripId}/expenses/new?error=payer`);
+  }
 
-  await prisma.expense.create({
+  const shares = calculateEqualShares(parsed.data.amount, selectedParticipants.length);
+  const status = coerceExpenseStatusForRole(parsed.data.status, resolved.access.role);
+
+  const expense = await prisma.expense.create({
     data: {
       title: parsed.data.title,
       amount: parsed.data.amount,
       category: parsed.data.category,
       payerId: parsed.data.payerId,
       tripId,
+      createdByUserId: userId,
+      paidByUserId: payer.userId || null,
+      updatedByUserId: userId,
+      status,
       date: parseDateInput(parsed.data.date) ?? new Date(),
       notes: parsed.data.notes || null,
       shares: {
@@ -83,6 +135,15 @@ export async function createExpense(tripId: string, formData: FormData) {
         }))
       }
     }
+  });
+  await writeAuditLog({
+    actorUserId: userId,
+    tripId,
+    action: "expense.create",
+    targetType: "expense",
+    targetId: expense.id,
+    after: expenseSnapshot(expense),
+    metadata: { shareParticipantIds: selectedParticipants.map((participant) => participant.id) }
   });
 
   logger.info("expense.create.success", { userId, tripId });
@@ -102,8 +163,9 @@ export async function updateExpense(tripId: string, expenseId: string, formData:
     redirect(`/trips/${tripId}/expenses/${expenseId}/edit?error=invalid`);
   }
 
+  const resolved = await requireTripAccess(tripId, userId);
   const trip = await prisma.trip.findFirst({
-    where: { id: tripId, ownerId: userId },
+    where: { id: tripId },
     include: { participants: true }
   });
   if (!trip) redirect("/dashboard");
@@ -114,22 +176,29 @@ export async function updateExpense(tripId: string, expenseId: string, formData:
     false
   );
 
-  if (
-    !trip.participants.some((participant) => participant.id === parsed.data.payerId) ||
-    selectedParticipants.length === 0
-  ) {
+  const payer = trip.participants.find((participant) => participant.id === parsed.data.payerId);
+  if (!payer || selectedParticipants.length === 0) {
     logger.warn("expense.update.participants_invalid", { userId, tripId, expenseId });
     redirect(`/trips/${tripId}/expenses/${expenseId}/edit?error=participants`);
   }
 
   const existingExpense = await prisma.expense.findFirst({
-    where: { id: expenseId, trip: { id: tripId, ownerId: userId } }
+    where: { id: expenseId, tripId }
   });
   if (!existingExpense) redirect(`/trips/${tripId}`);
+  if (!canEditExpense(resolved.access.role, userId, existingExpense)) {
+    logger.warn("expense.update.denied", { userId, tripId, expenseId });
+    redirect(`/trips/${tripId}?error=forbidden`);
+  }
+  if (!userCanUsePayer(resolved.access.role, userId, payer)) {
+    logger.warn("expense.update.payer_denied", { userId, tripId, expenseId, payerId: payer.id });
+    redirect(`/trips/${tripId}/expenses/${expenseId}/edit?error=payer`);
+  }
 
   const shares = calculateEqualShares(parsed.data.amount, selectedParticipants.length);
+  const status = coerceExpenseStatusForRole(parsed.data.status, resolved.access.role);
 
-  await prisma.$transaction([
+  const [, updatedExpense] = await prisma.$transaction([
     prisma.expenseShare.deleteMany({ where: { expenseId } }),
     prisma.expense.update({
       where: { id: expenseId },
@@ -138,6 +207,9 @@ export async function updateExpense(tripId: string, expenseId: string, formData:
         amount: parsed.data.amount,
         category: parsed.data.category,
         payerId: parsed.data.payerId,
+        paidByUserId: payer.userId || null,
+        updatedByUserId: userId,
+        status,
         date: parseDateInput(parsed.data.date) ?? new Date(),
         notes: parsed.data.notes || null,
         shares: {
@@ -149,6 +221,16 @@ export async function updateExpense(tripId: string, expenseId: string, formData:
       }
     })
   ]);
+  await writeAuditLog({
+    actorUserId: userId,
+    tripId,
+    action: "expense.update",
+    targetType: "expense",
+    targetId: expenseId,
+    before: expenseSnapshot(existingExpense),
+    after: expenseSnapshot(updatedExpense),
+    metadata: { shareParticipantIds: selectedParticipants.map((participant) => participant.id) }
+  });
 
   logger.info("expense.update.success", { userId, tripId, expenseId });
   revalidatePath(`/trips/${tripId}`);
@@ -161,12 +243,22 @@ export async function deleteExpense(tripId: string, expenseId: string) {
   const parsedExpenseId = idSchema.safeParse(expenseId);
   if (!parsedTripId.success || !parsedExpenseId.success) redirect("/dashboard");
 
-  await prisma.expense.deleteMany({
-    where: {
-      id: expenseId,
-      trip: { id: tripId, ownerId: userId }
-    }
+  const resolved = await requireTripAccess(tripId, userId);
+  const expense = await prisma.expense.findFirst({ where: { id: expenseId, tripId } });
+  if (!expense) redirect(`/trips/${tripId}`);
+  if (!canDeleteExpense(resolved.access.role, userId, expense)) {
+    logger.warn("expense.delete.denied", { userId, tripId, expenseId });
+    redirect(`/trips/${tripId}?error=forbidden`);
+  }
+  await writeAuditLog({
+    actorUserId: userId,
+    tripId,
+    action: "expense.delete",
+    targetType: "expense",
+    targetId: expenseId,
+    before: expenseSnapshot(expense)
   });
+  await prisma.expense.delete({ where: { id: expenseId } });
   logger.info("expense.delete.success", { userId, tripId, expenseId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);
