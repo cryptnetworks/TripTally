@@ -19,6 +19,7 @@ async function main() {
     data: {
       username: "demo",
       email: "demo@triptally.app",
+      emailVerifiedAt: new Date(),
       passwordHash: await bcrypt.hash("DemoPass123", 12),
       trips: {
         create: {

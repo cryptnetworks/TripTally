@@ -11,12 +11,125 @@ model User {
   username            String               @unique
   email               String               @unique
   passwordHash        String
+  role                String               @default("user")
+  disabledAt          DateTime?
+  lastLoginAt         DateTime?
+  emailVerifiedAt     DateTime?
+  twoFactorMethod     String               @default("none")
+  authenticatorEnabled Boolean              @default(false)
+  authenticatorSecretEncrypted String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   trips               Trip[]
   passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  twoFactorChallenges TwoFactorChallenge[]
+  authAccounts        UserAuthAccount[]
+  oauthLoginTokens    OAuthLoginToken[]
+  auditLogs           AuditLog[]           @relation("AuditActor")
 
+  @@index([role])
+  @@index([disabledAt])
   @@map("users")
+}
+
+model UserAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  providerId        String
+  providerAccountId String
+  email             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, providerAccountId])
+  @@unique([userId, providerId])
+  @@index([userId])
+  @@map("user_auth_accounts")
+}
+
+model AuthProviderConfig {
+  id                    String   @id
+  name                  String
+  enabled               Boolean  @default(false)
+  clientId              String?
+  encryptedClientSecret String?
+  scopesJson            String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("auth_provider_configs")
+}
+
+model OAuthLoginToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("oauth_login_tokens")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String?
+  action       String
+  targetType   String
+  targetId     String?
+  metadataJson String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  actor        User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model TwoFactorChallenge {
+  id        String    @id @default(cuid())
+  codeHash  String
+  method    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("two_factor_challenges")
 }
 
 model PasswordResetToken {

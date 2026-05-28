@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "TripTally",
-    short_name: "TripTally",
-    description: "Track group trip expenses and settlements.",
+    name: "Trip Tally",
+    short_name: "Trip Tally",
+    description: "Track travel expenses and split trip costs easily.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",
@@ -12,10 +12,16 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#0f766e",
     icons: [
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/branding/logo-icon.png",
+        sizes: "512x512",
+        type: "image/png",
         purpose: "maskable"
+      },
+      {
+        src: "/branding/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+        purpose: "any"
       }
     ]
   };

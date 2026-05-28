@@ -58,8 +58,10 @@ const nodeEnv = stripQuotes(process.env.NODE_ENV || "development");
 const databaseUrl = stripQuotes(process.env.DATABASE_URL || "");
 const nextAuthUrl = stripQuotes(process.env.NEXTAUTH_URL || "");
 const nextAuthSecret = stripQuotes(process.env.NEXTAUTH_SECRET || "");
+const authConfigEncryptionKey = stripQuotes(process.env.AUTH_CONFIG_ENCRYPTION_KEY || "");
 const smtpEnabled = stripQuotes(process.env.SMTP_ENABLED || "false") === "true";
 const smtpPort = Number(stripQuotes(process.env.SMTP_PORT || "587"));
+const smtpSecure = stripQuotes(process.env.SMTP_SECURE || "false") === "true";
 const resetMinutes = Number(stripQuotes(process.env.PASSWORD_RESET_TOKEN_MINUTES || "45"));
 
 if (!["development", "test", "production"].includes(nodeEnv)) {
@@ -97,6 +99,13 @@ if (
 
 if (
   nodeEnv === "production" &&
+  (!authConfigEncryptionKey || placeholderSecrets.has(authConfigEncryptionKey))
+) {
+  fail("AUTH_CONFIG_ENCRYPTION_KEY must be set to a real random value in production.");
+}
+
+if (
+  nodeEnv === "production" &&
   nextAuthUrl.startsWith("http://") &&
   !nextAuthUrl.includes("localhost")
 ) {
@@ -112,6 +121,12 @@ if (smtpEnabled) {
   if (!process.env.SMTP_FROM) fail("SMTP_FROM is required when SMTP_ENABLED=true.");
   if (!Number.isFinite(smtpPort) || smtpPort <= 0 || smtpPort > 65535) {
     fail("SMTP_PORT must be a valid TCP port.");
+  }
+  if (smtpPort === 587 && smtpSecure) {
+    fail("SMTP_SECURE must be false when SMTP_PORT=587. Port 587 uses STARTTLS.");
+  }
+  if (smtpPort === 465 && !smtpSecure) {
+    warn("SMTP_PORT=465 usually requires SMTP_SECURE=true.");
   }
 }
 

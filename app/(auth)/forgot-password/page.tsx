@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
 import { requestPasswordReset } from "@/lib/actions";
 
 export default async function ForgotPasswordPage({
@@ -9,10 +10,12 @@ export default async function ForgotPasswordPage({
   const query = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <section className="card w-full max-w-md p-6">
-        <p className="text-xs font-bold uppercase tracking-normal text-ocean">TripTally</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">Reset password</h1>
+    <main className="flex min-h-screen items-center justify-center bg-brand-page px-4 py-10">
+      <section className="auth-card w-full max-w-md p-6">
+        <div className="mb-6 flex justify-center">
+          <BrandLogo href="/" priority />
+        </div>
+        <h1 className="text-center text-3xl font-bold text-ink">Reset password</h1>
         <p className="mt-2 text-sm text-muted">
           Enter your email and we will send password reset instructions if an account exists.
         </p>

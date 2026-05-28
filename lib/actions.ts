@@ -1,4 +1,24 @@
-export { registerUser, requestPasswordReset, resetPassword } from "@/lib/actions/auth";
+export {
+  registerUser,
+  requestPasswordReset,
+  resendVerificationEmail,
+  resetPassword,
+  setTwoFactorMethod,
+  startAuthenticatorSetup,
+  updateAccountPassword,
+  updateAccountProfile,
+  verifyAuthenticatorSetup,
+  verifyEmailAddress,
+  unlinkAuthProvider
+} from "@/lib/actions/auth";
+export {
+  deleteUser,
+  resetUserPassword,
+  setUserDisabled,
+  updateAuthProviderConfig,
+  updateLocalAuthSettings,
+  updateUserRole
+} from "@/lib/actions/admin";
 export { createTrip, deleteTrip, updateTrip } from "@/lib/actions/trips";
 export {
   createParticipant,

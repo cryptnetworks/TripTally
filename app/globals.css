@@ -1,17 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #18212f;
-  --color-muted: #657386;
-  --color-line: #dbe3ec;
-  --color-surface: #f7f9fb;
-  --color-ocean: #0f766e;
-  --color-coral: #e85d4f;
+  --color-ink: var(--app-ink);
+  --color-muted: var(--app-muted);
+  --color-line: var(--app-line);
+  --color-surface: var(--app-surface);
+  --color-ocean: var(--app-ocean);
+  --color-coral: var(--app-coral);
+  --color-brand-soft: var(--app-brand-soft);
   --shadow-soft: 0 10px 30px rgba(24, 33, 47, 0.08);
 }
 
 :root {
+  --app-ink: #18212f;
+  --app-muted: #657386;
+  --app-line: #dbe3ec;
+  --app-surface: #f7f9fb;
+  --app-ocean: #0f766e;
+  --app-coral: #e85d4f;
+  --app-brand-soft: #e7f5f1;
+  --app-page-start: #ffffff;
+  --app-page-mid: #f7f9fb;
+  --app-page-end: #eef5f6;
+  --app-card: rgba(255, 255, 255, 0.95);
+  --app-card-solid: #ffffff;
+  --app-gradient-ocean: rgba(15, 118, 110, 0.12);
+  --app-gradient-coral: rgba(232, 93, 79, 0.08);
   color-scheme: light;
+}
+
+.dark {
+  --app-ink: #eef7f8;
+  --app-muted: #a8b8c4;
+  --app-line: #253544;
+  --app-surface: #101923;
+  --app-ocean: #5eead4;
+  --app-coral: #fb8378;
+  --app-brand-soft: #123d3a;
+  --app-page-start: #0b1118;
+  --app-page-mid: #101923;
+  --app-page-end: #0d151d;
+  --app-card: rgba(17, 28, 38, 0.94);
+  --app-card-solid: #111c26;
+  --app-gradient-ocean: rgba(94, 234, 212, 0.12);
+  --app-gradient-coral: rgba(251, 131, 120, 0.08);
+  color-scheme: dark;
 }
 
 * {
@@ -24,8 +57,15 @@ body {
 }
 
 body {
-  background: #f7f9fb;
-  color: #18212f;
+  background:
+    radial-gradient(circle at top left, var(--app-gradient-ocean), transparent 28rem),
+    linear-gradient(
+      180deg,
+      var(--app-page-start) 0%,
+      var(--app-page-mid) 42%,
+      var(--app-page-end) 100%
+    );
+  color: var(--app-ink);
 }
 
 button,
@@ -37,11 +77,12 @@ textarea {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-ocean px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-ocean px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
     @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2;
+    background-color: var(--app-card-solid);
   }
 
   .btn-danger {
@@ -49,7 +90,8 @@ textarea {
   }
 
   .field {
-    @apply w-full rounded-lg border border-line bg-white px-3 py-3 text-base text-ink outline-none transition placeholder:text-slate-400 focus:border-ocean focus:ring-2 focus:ring-ocean/20;
+    @apply w-full rounded-lg border border-line px-3 py-3 text-base text-ink outline-none transition placeholder:text-slate-400 focus:border-ocean focus:ring-2 focus:ring-ocean/20;
+    background-color: var(--app-card-solid);
   }
 
   .label {
@@ -57,6 +99,24 @@ textarea {
   }
 
   .card {
-    @apply rounded-lg border border-line bg-white shadow-soft;
+    @apply rounded-lg border border-line shadow-soft;
+    background-color: var(--app-card);
+  }
+
+  .bg-brand-page {
+    background:
+      radial-gradient(circle at 15% 0%, var(--app-gradient-ocean), transparent 24rem),
+      radial-gradient(circle at 85% 10%, var(--app-gradient-coral), transparent 20rem),
+      linear-gradient(
+        180deg,
+        var(--app-page-start) 0%,
+        var(--app-page-mid) 48%,
+        var(--app-page-end) 100%
+      );
+  }
+
+  .auth-card {
+    @apply rounded-lg border border-line shadow-soft backdrop-blur;
+    background-color: var(--app-card);
   }
 }

@@ -5,7 +5,7 @@ export function BalanceCard({ balance }: { balance: ParticipantWithBalances }) {
   const isPositive = balance.net >= 0;
 
   return (
-    <article className="rounded-lg border border-line bg-white p-4" data-testid="balance-card">
+    <article className="card p-4" data-testid="balance-card">
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-semibold text-ink">{balance.participant.name}</h3>
         <span
