@@ -352,11 +352,24 @@ docker build -t triptally:ci .
 End-to-end tests use Playwright:
 
 ```bash
-npx playwright install
+npx playwright install chromium firefox webkit
 npm run test:e2e
+npm run test:e2e:ios
+npm run test:e2e:headed
 ```
 
-Playwright forces local `NEXTAUTH_URL` and `PUBLIC_APP_URL` values when it starts its own dev server.
+Playwright starts a local dev server against `file:./playwright.db` unless
+`PLAYWRIGHT_BASE_URL` is set. The test server sets local `NEXTAUTH_URL`,
+`PUBLIC_APP_URL`, `NEXTAUTH_SECRET`, `TOKEN_DIGEST_SECRET`, and
+`AUTH_CONFIG_ENCRYPTION_KEY` values automatically. It also enables the
+test-only OAuth provider with `TEST_OAUTH_PROVIDER_ENABLED=true`; that provider
+is ignored in production and exists only for SSO redirect/callback regression
+tests.
+
+The browser matrix includes desktop Chromium, Firefox, WebKit, Mobile Chrome,
+and a Mobile Safari project using Playwright's iPhone WebKit profile. The iOS
+regression test covers decimal amount entry and submit behavior for the add
+expense flow.
 
 ## Repository Automation
 

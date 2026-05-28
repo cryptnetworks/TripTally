@@ -3,7 +3,7 @@ import { decryptSecret, encryptSecret } from "@/lib/secret-encryption";
 import { prisma } from "@/lib/prisma";
 import { publicBaseUrl } from "@/lib/url";
 
-export type OAuthProviderId = "google" | "github" | "discord" | "facebook";
+export type OAuthProviderId = "google" | "github" | "discord" | "facebook" | "test";
 
 export type OAuthProviderDefinition = {
   id: OAuthProviderId;
@@ -49,13 +49,37 @@ export const oauthProviderDefinitions: OAuthProviderDefinition[] = [
   }
 ];
 
+function testOAuthEnabled() {
+  return (
+    process.env.NODE_ENV !== "production" && process.env.TEST_OAUTH_PROVIDER_ENABLED === "true"
+  );
+}
+
+function testOAuthProviderDefinition(): OAuthProviderDefinition {
+  const baseUrl = publicBaseUrl();
+  return {
+    id: "test",
+    name: "Test OAuth",
+    defaultScopes: ["openid", "email", "profile"],
+    authorizationUrl: `${baseUrl}/api/test/oauth/authorize`,
+    tokenUrl: `${baseUrl}/api/test/oauth/token`,
+    userInfoUrl: `${baseUrl}/api/test/oauth/userinfo`
+  };
+}
+
+function allProviderDefinitions() {
+  return testOAuthEnabled()
+    ? [...oauthProviderDefinitions, testOAuthProviderDefinition()]
+    : oauthProviderDefinitions;
+}
+
 export function providerDefinition(providerId: string) {
-  return oauthProviderDefinitions.find((provider) => provider.id === providerId);
+  return allProviderDefinitions().find((provider) => provider.id === providerId);
 }
 
 export async function ensureProviderConfigs() {
   await prisma.$transaction(
-    oauthProviderDefinitions.map((provider) =>
+    allProviderDefinitions().map((provider) =>
       prisma.authProviderConfig.upsert({
         where: { id: provider.id },
         create: {
@@ -91,6 +115,15 @@ export async function enabledLoginProviders() {
 export async function getProviderRuntimeConfig(providerId: string) {
   const definition = providerDefinition(providerId);
   if (!definition) return null;
+
+  if (providerId === "test" && testOAuthEnabled()) {
+    return {
+      definition,
+      clientId: "triptally-test-client",
+      clientSecret: "triptally-test-secret",
+      scopes: definition.defaultScopes
+    };
+  }
 
   const config = await prisma.authProviderConfig.findUnique({ where: { id: providerId } });
   if (!config?.enabled || !config.clientId || !config.encryptedClientSecret) return null;

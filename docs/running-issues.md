@@ -119,3 +119,13 @@
 - Fix applied: Constrained receipt reads/writes to the configured upload directory, restricted receipt review/attachment to uploaders or managers, added Discord signature timestamp freshness checks, suppressed unsafe persisted payment URLs at render time, and gated receipt uploads plus Discord interactions behind explicit feature flags.
 - Verification commands: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run security:audit`.
 - Status: Fixed locally; not pushed.
+
+## Issue 13: iOS Safari expense and SSO regressions
+
+- Date encountered: 2026-05-28
+- Error summary: iOS/Safari users could fail to complete add-expense and SSO flows after the major expansion.
+- Root cause: Expense amount fields used `type=number`, which is brittle on iOS decimal keyboards and locale comma entry. OAuth login completed through a client-side credentials fetch after the provider callback, which is fragile on Safari after cross-site redirects.
+- Files changed: Expense forms, expense parsing action, OAuth callback handling, test-only OAuth provider routes, Playwright config/tests, CI workflow, and README testing docs.
+- Fix applied: Changed money entry fields to `type=text` with `inputMode=decimal`, normalized comma decimals server-side, and made OAuth callbacks establish the NextAuth JWT session server-side before redirecting to the dashboard. Added Playwright desktop/mobile browser projects and Mobile Safari regression tests.
+- Verification commands: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run test:e2e:ios`, `npm run build`, `npm run security:audit`.
+- Status: In progress locally.

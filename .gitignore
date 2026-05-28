@@ -10,6 +10,8 @@ node_modules
 out/
 *.tsbuildinfo
 prisma/dev.db
+playwright.db
+prisma/playwright.db
 coverage/
 playwright-report/
 test-results/

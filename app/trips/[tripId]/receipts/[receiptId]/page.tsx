@@ -94,7 +94,9 @@ export default async function ReceiptReviewPage({
                     disabled={!canEditReceipt}
                     id={field}
                     name={field}
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*[.,]?[0-9]*"
                     min="0"
                     step="0.01"
                     defaultValue={receipt[field] ? Number(receipt[field]).toFixed(2) : ""}

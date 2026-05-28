@@ -21,7 +21,7 @@ import { expenseSchema, formString, idSchema, parseDateInput } from "@/lib/valid
 function parseExpenseForm(formData: FormData) {
   return expenseSchema.safeParse({
     title: formString(formData, "title"),
-    amount: formString(formData, "amount"),
+    amount: formString(formData, "amount").replace(",", "."),
     category: formString(formData, "category"),
     payerId: formString(formData, "payerId"),
     date: formString(formData, "date"),
