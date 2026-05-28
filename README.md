@@ -175,6 +175,12 @@ The Next.js launch command also applies existing Prisma migrations before starti
 
 ## Docker
 
+Pull the published GHCR image:
+
+```bash
+docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+```
+
 Build the production image:
 
 ```bash
@@ -205,7 +211,7 @@ docker run --name triptally \
   -p 3000:3000 \
   -v triptally_data:/app/data \
   --env-file .env \
-  triptally
+  ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
 
 Open `http://localhost:3000`.
@@ -248,7 +254,7 @@ docker run --name triptally \
   -p 3000:3000 \
   -v triptally_data:/app/data \
   --env-file .env \
-  triptally
+  ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
 
 To remove the persisted local Docker database:
