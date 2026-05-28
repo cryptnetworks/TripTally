@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
+import { encode } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
-import { OAUTH_LOGIN_COOKIE } from "@/lib/cookies";
-import { createOAuthLoginToken } from "@/lib/oauth-login";
 import { getProviderRuntimeConfig, oauthCallbackUrl } from "@/lib/oauth-providers";
 import { bootstrapRole } from "@/lib/roles";
 import { emailDomainAllowed, getAuthSettings } from "@/lib/settings";
@@ -14,6 +13,42 @@ type ProviderProfile = {
   name: string | null;
   emailVerified?: boolean;
 };
+
+const sessionMaxAge = 30 * 24 * 60 * 60;
+
+function shouldUseSecureSessionCookie() {
+  return process.env.NODE_ENV === "production" && process.env.NEXTAUTH_URL?.startsWith("https://");
+}
+
+async function setOAuthSessionCookie(
+  response: NextResponse,
+  user: { id: string; username: string; email: string }
+) {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("NEXTAUTH_SECRET is required for OAuth session creation.");
+
+  const sessionToken = await encode({
+    secret,
+    maxAge: sessionMaxAge,
+    token: {
+      id: user.id,
+      sub: user.id,
+      name: user.username,
+      email: user.email
+    }
+  });
+  response.cookies.set(
+    shouldUseSecureSessionCookie() ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+    sessionToken,
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: shouldUseSecureSessionCookie(),
+      maxAge: sessionMaxAge,
+      path: "/"
+    }
+  );
+}
 
 async function exchangeCode(input: {
   provider: string;
@@ -207,14 +242,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
   }
 
   if (!user || user.disabledAt) return redirect("/login?oauth=denied");
-  const token = await createOAuthLoginToken(user.id);
-  const response = redirect("/login?oauth=complete");
-  response.cookies.set(OAUTH_LOGIN_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 5 * 60,
-    path: "/"
-  });
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  const response = redirect("/dashboard");
+  await setOAuthSessionCookie(response, user);
   return response;
 }

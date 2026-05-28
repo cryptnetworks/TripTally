@@ -1,19 +1,25 @@
+const isProduction = process.env.NODE_ENV === "production";
+const cspDirectives = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  "connect-src 'self'"
+];
+
+if (isProduction) {
+  cspDirectives.push("upgrade-insecure-requests");
+}
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline'",
-      "connect-src 'self'",
-      "upgrade-insecure-requests"
-    ].join("; ")
+    value: cspDirectives.join("; ")
   },
   {
     key: "X-DNS-Prefetch-Control",
@@ -39,10 +45,14 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=()"
   },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=31536000; includeSubDomains"
-  }
+  ...(isProduction
+    ? [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=31536000; includeSubDomains"
+        }
+      ]
+    : [])
 ];
 
 /** @type {import('next').NextConfig} */

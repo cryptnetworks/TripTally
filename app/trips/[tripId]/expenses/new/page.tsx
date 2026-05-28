@@ -68,7 +68,9 @@ export default async function NewExpensePage({ params }: { params: Promise<{ tri
                 data-testid="expense-amount"
                 id="amount"
                 name="amount"
-                type="number"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*[.,]?[0-9]*"
                 min="0.01"
                 step="0.01"
                 required

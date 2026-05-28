@@ -58,7 +58,7 @@ export default async function LoginPage({
             You have been logged out.
           </p>
         ) : null}
-        {query.oauth ? (
+        {query.oauth && query.oauth !== "complete" ? (
           <p className="mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral">
             OAuth sign-in failed: {query.oauth}.
           </p>

@@ -52,6 +52,21 @@ jobs:
       - name: Unit and integration tests
         run: npm test
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Browser smoke tests
+        env:
+          DATABASE_URL: file:./playwright.db
+          NEXTAUTH_URL: http://127.0.0.1:3000
+          PUBLIC_APP_URL: http://127.0.0.1:3000
+          NEXTAUTH_SECRET: ci-playwright-nextauth-secret
+          TOKEN_DIGEST_SECRET: ci-playwright-token-digest-secret
+          AUTH_CONFIG_ENCRYPTION_KEY: ci-playwright-auth-config-key
+          SMTP_ENABLED: "false"
+          TEST_OAUTH_PROVIDER_ENABLED: "true"
+        run: npm run test:e2e -- --project=Chromium --project='Mobile Safari'
+
       - name: Production build
         run: npm run build
 

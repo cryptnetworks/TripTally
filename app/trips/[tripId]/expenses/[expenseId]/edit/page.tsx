@@ -82,7 +82,9 @@ export default async function EditExpensePage({
                 data-testid="expense-amount"
                 id="amount"
                 name="amount"
-                type="number"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*[.,]?[0-9]*"
                 min="0.01"
                 step="0.01"
                 defaultValue={Number(expense.amount).toFixed(2)}
