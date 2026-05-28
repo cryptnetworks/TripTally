@@ -12,7 +12,7 @@
 ## Docker Runtime Flow
 
 1. Container starts as the `nextjs` user.
-2. Entrypoint normalizes `DATABASE_URL`, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET`.
+2. Entrypoint normalizes `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, and `TOKEN_DIGEST_SECRET`.
 3. SQLite path is forced into `/app/data` for Docker persistence when needed.
 4. Prisma Client is generated.
 5. Configuration is validated.

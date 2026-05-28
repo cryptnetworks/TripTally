@@ -19,6 +19,7 @@ export const appConfigSchema = z
         "DATABASE_URL must use file:, postgres://, or postgresql://."
       ),
     nextAuthUrl: z.url(),
+    tokenDigestSecret: z.string().min(24),
     authConfigEncryptionKey: z.string().min(24).optional(),
     smtpEnabled: optionalBooleanString,
     smtpHost: z.string().optional(),
@@ -37,6 +38,7 @@ export function getAppConfig() {
     nodeEnv: process.env.NODE_ENV,
     databaseUrl: process.env.DATABASE_URL,
     nextAuthUrl: process.env.NEXTAUTH_URL,
+    tokenDigestSecret: process.env.TOKEN_DIGEST_SECRET,
     authConfigEncryptionKey: process.env.AUTH_CONFIG_ENCRYPTION_KEY,
     smtpEnabled: process.env.SMTP_ENABLED,
     smtpHost: process.env.SMTP_HOST,

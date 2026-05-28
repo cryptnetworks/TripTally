@@ -14,9 +14,10 @@ docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862
 cp .env.docker.example .env
 openssl rand -base64 32
 openssl rand -base64 32
+openssl rand -base64 32
 ```
 
-Use one generated value for `NEXTAUTH_SECRET` and the other for `AUTH_CONFIG_ENCRYPTION_KEY`.
+Use separate generated values for `NEXTAUTH_SECRET`, `TOKEN_DIGEST_SECRET`, and `AUTH_CONFIG_ENCRYPTION_KEY`.
 
 Minimum local Docker values:
 
@@ -26,6 +27,7 @@ DATABASE_URL=file:/app/data/triptally.db
 NEXTAUTH_URL=http://localhost:3000
 PUBLIC_APP_URL=http://localhost:3000
 NEXTAUTH_SECRET=paste-generated-secret-here
+TOKEN_DIGEST_SECRET=paste-generated-secret-here
 AUTH_CONFIG_ENCRYPTION_KEY=paste-generated-secret-here
 SMTP_ENABLED=false
 ```

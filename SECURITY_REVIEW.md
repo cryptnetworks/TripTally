@@ -38,7 +38,7 @@ Configured globally:
 - `Permissions-Policy`
 - `Strict-Transport-Security`
 - `Cross-Origin-Opener-Policy: same-origin`
-- Password reset, email verification, MFA session handoff, and OAuth handoff tokens are stored as keyed HMAC digests instead of raw tokens or unsalted lookup hashes.
+- Password reset, email verification, MFA session handoff, and OAuth handoff tokens are stored as HMAC-SHA-256 digests keyed by `TOKEN_DIGEST_SECRET` instead of raw tokens or unsalted lookup hashes.
 
 ## Residual Notes
 

@@ -12,7 +12,7 @@
 - Provider access tokens and refresh tokens are not stored.
 - OAuth login uses a local short-lived, single-use handoff token.
 - The handoff token is stored in an HTTP-only cookie and consumed by the credentials provider.
-- Password reset, email verification, MFA session handoff, and OAuth handoff tokens are stored only as keyed HMAC digests.
+- Password reset, email verification, MFA session handoff, and OAuth handoff tokens are stored only as HMAC-SHA-256 digests keyed by `TOKEN_DIGEST_SECRET`.
 - OAuth account linking requires a current app session.
 
 ## CSRF
@@ -54,4 +54,4 @@ Automated coverage includes:
 - GitHub Actions security workflow for high-severity npm audit, Trivy filesystem scan, and Trivy Docker image scan.
 - CodeQL is expected to run through GitHub default setup in repository settings.
 
-`npm run security:audit` currently fails only high or critical npm advisories. Moderate advisories are reviewed separately because some upstream fixes require breaking changes.
+`npm run security:audit` currently fails high or critical advisories. The dependency tree is expected to audit cleanly; vulnerable transitive dependencies are remediated with scoped npm overrides when upstream packages lag patched versions.

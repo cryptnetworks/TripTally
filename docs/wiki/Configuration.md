@@ -10,6 +10,7 @@ DATABASE_URL=file:/app/data/triptally.db
 NEXTAUTH_URL=https://app.example.com
 PUBLIC_APP_URL=https://app.example.com
 NEXTAUTH_SECRET=generate-a-long-random-secret
+TOKEN_DIGEST_SECRET=generate-a-long-random-secret
 AUTH_CONFIG_ENCRYPTION_KEY=generate-a-long-random-secret
 ```
 
@@ -26,12 +27,14 @@ Generate separate values:
 ```bash
 openssl rand -base64 32
 openssl rand -base64 32
+openssl rand -base64 32
 ```
 
 - `NEXTAUTH_SECRET` signs NextAuth session tokens.
+- `TOKEN_DIGEST_SECRET` keys stored one-time token digests.
 - `AUTH_CONFIG_ENCRYPTION_KEY` encrypts saved OAuth provider client secrets.
 
-Back up `AUTH_CONFIG_ENCRYPTION_KEY`. Losing it prevents decrypting stored provider secrets.
+Changing `TOKEN_DIGEST_SECRET` invalidates outstanding password reset, email verification, MFA session handoff, and OAuth handoff tokens. Back up `AUTH_CONFIG_ENCRYPTION_KEY`. Losing it prevents decrypting stored provider secrets.
 
 ## Public URL Values
 

@@ -5,6 +5,7 @@
 Check:
 
 - `NEXTAUTH_SECRET` is set and is not a placeholder.
+- `TOKEN_DIGEST_SECRET` is set and is not a placeholder.
 - `AUTH_CONFIG_ENCRYPTION_KEY` is set in production and is not a placeholder.
 - `DATABASE_URL` is valid.
 - `/app/data` is writable.

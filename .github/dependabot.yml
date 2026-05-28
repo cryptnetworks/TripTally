@@ -3,25 +3,70 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    labels:
+      - dependencies
+      - npm
     groups:
+      nextjs-stack:
+        patterns:
+          - next
+          - react
+          - react-dom
+          - eslint-config-next
+      auth-stack:
+        patterns:
+          - next-auth
+          - emailjs
+          - bcryptjs
+      prisma-stack:
+        patterns:
+          - prisma
+          - "@prisma/*"
+          - pg
+      testing-tools:
+        patterns:
+          - "@playwright/test"
+          - vitest
+          - tsx
+      lint-format-tools:
+        patterns:
+          - eslint
+          - prettier
+          - typescript
+          - postcss
+          - autoprefixer
+          - tailwindcss
+          - "@tailwindcss/*"
+          - "@types/*"
       npm-minor-patch:
         update-types:
           - minor
           - patch
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 8
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    labels:
+      - dependencies
+      - github-actions
     groups:
-      actions-minor-patch:
-        update-types:
-          - minor
-          - patch
+      github-actions:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
 
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+    groups:
+      docker-images:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5

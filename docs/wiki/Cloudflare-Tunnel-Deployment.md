@@ -17,6 +17,7 @@ Also set real values for:
 
 ```env
 NEXTAUTH_SECRET=
+TOKEN_DIGEST_SECRET=
 AUTH_CONFIG_ENCRYPTION_KEY=
 ```
 

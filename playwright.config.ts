@@ -16,7 +16,7 @@ export default defineConfig({
     ? undefined
     : {
         command:
-          "npm run prisma:generate && npm run prisma:migrate && NEXTAUTH_URL=http://127.0.0.1:3000 PUBLIC_APP_URL=http://127.0.0.1:3000 npm run dev -- -H 127.0.0.1 -p 3000",
+          "npm run prisma:generate && npm run prisma:migrate && NEXTAUTH_URL=http://127.0.0.1:3000 PUBLIC_APP_URL=http://127.0.0.1:3000 TOKEN_DIGEST_SECRET=playwright-token-digest-secret npm run dev -- -H 127.0.0.1 -p 3000",
         url: "http://127.0.0.1:3000/login",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000

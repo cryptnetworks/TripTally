@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { SMTPClient } from "emailjs";
 import { logger } from "@/lib/logger";
 
 type ResetEmailInput = {
@@ -17,6 +17,14 @@ type TwoFactorEmailInput = {
   to: string;
   code: string;
   expiresInMinutes: number;
+};
+
+type EmailMessage = {
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
 };
 
 function smtpConfigured() {
@@ -38,10 +46,33 @@ function baseTransportOptions() {
   return {
     host: process.env.SMTP_HOST,
     port: smtpPort(),
-    secure,
-    requireTLS: !secure,
-    auth: user && pass ? { user, pass } : undefined
+    ssl: secure,
+    tls: !secure,
+    user,
+    password: pass
   };
+}
+
+async function sendSmtpEmail(message: EmailMessage) {
+  const client = new SMTPClient(baseTransportOptions());
+
+  try {
+    await client.sendAsync({
+      from: message.from,
+      to: message.to,
+      subject: message.subject,
+      text: message.text,
+      attachment: [
+        {
+          data: message.html,
+          alternative: true,
+          type: "text/html"
+        }
+      ]
+    });
+  } finally {
+    client.smtp.close();
+  }
 }
 
 export async function sendPasswordResetEmail({ to, resetUrl, expiresInMinutes }: ResetEmailInput) {
@@ -53,12 +84,11 @@ export async function sendPasswordResetEmail({ to, resetUrl, expiresInMinutes }:
     return;
   }
 
-  const transporter = nodemailer.createTransport(baseTransportOptions());
   const from = process.env.SMTP_FROM as string;
   const appName = process.env.EMAIL_APP_NAME || "Trip Tally";
 
   try {
-    await transporter.sendMail({
+    await sendSmtpEmail({
       from,
       to,
       subject: `Reset your ${appName} password`,
@@ -102,12 +132,11 @@ export async function sendEmailVerificationEmail({
     return;
   }
 
-  const transporter = nodemailer.createTransport(baseTransportOptions());
   const from = process.env.SMTP_FROM as string;
   const appName = process.env.EMAIL_APP_NAME || "Trip Tally";
 
   try {
-    await transporter.sendMail({
+    await sendSmtpEmail({
       from,
       to,
       subject: `Verify your ${appName} account`,
@@ -147,12 +176,11 @@ export async function sendTwoFactorEmail({ to, code, expiresInMinutes }: TwoFact
     return;
   }
 
-  const transporter = nodemailer.createTransport(baseTransportOptions());
   const from = process.env.SMTP_FROM as string;
   const appName = process.env.EMAIL_APP_NAME || "Trip Tally";
 
   try {
-    await transporter.sendMail({
+    await sendSmtpEmail({
       from,
       to,
       subject: `${appName} sign-in code`,

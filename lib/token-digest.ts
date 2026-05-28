@@ -1,18 +1,32 @@
 import crypto from "crypto";
 
-const DEVELOPMENT_TOKEN_DIGEST_KEY = "triptally-development-token-digest-key";
+const TEST_TOKEN_DIGEST_SECRET = "triptally-test-token-digest-secret";
+const TOKEN_DIGEST_HEX_LENGTH = 64;
 
-function tokenDigestKey() {
-  const key = process.env.AUTH_CONFIG_ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET;
-  if (key) return key;
+function tokenDigestSecret() {
+  const secret = process.env.TOKEN_DIGEST_SECRET;
+  if (secret) return secret;
 
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("NEXTAUTH_SECRET or AUTH_CONFIG_ENCRYPTION_KEY is required for token digests.");
+  if (process.env.NODE_ENV === "test") {
+    return TEST_TOKEN_DIGEST_SECRET;
   }
 
-  return DEVELOPMENT_TOKEN_DIGEST_KEY;
+  throw new Error("TOKEN_DIGEST_SECRET is required for token digests.");
 }
 
 export function digestLookupToken(token: string) {
-  return crypto.createHmac("sha256", tokenDigestKey()).update(token).digest("hex");
+  return crypto.createHmac("sha256", tokenDigestSecret()).update(token).digest("hex");
+}
+
+export function timingSafeEqualTokenDigest(token: string, expectedDigest: string) {
+  if (!/^[a-f0-9]{64}$/i.test(expectedDigest)) return false;
+
+  const actual = Buffer.from(digestLookupToken(token), "hex");
+  const expected = Buffer.from(expectedDigest, "hex");
+
+  if (actual.length !== TOKEN_DIGEST_HEX_LENGTH / 2 || expected.length !== actual.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(actual, expected);
 }

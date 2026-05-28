@@ -32,9 +32,10 @@ Start from the Docker env example:
 cp .env.docker.example .env
 openssl rand -base64 32
 openssl rand -base64 32
+openssl rand -base64 32
 ```
 
-Use one generated value for `NEXTAUTH_SECRET` and the other for
+Use separate generated values for `NEXTAUTH_SECRET`, `TOKEN_DIGEST_SECRET`, and
 `AUTH_CONFIG_ENCRYPTION_KEY`.
 
 Minimum local Docker values:
@@ -45,6 +46,7 @@ DATABASE_URL=file:/app/data/triptally.db
 NEXTAUTH_URL=http://localhost:3000
 PUBLIC_APP_URL=http://localhost:3000
 NEXTAUTH_SECRET=paste-generated-secret-here
+TOKEN_DIGEST_SECRET=paste-generated-secret-here
 AUTH_CONFIG_ENCRYPTION_KEY=paste-generated-secret-here
 SMTP_ENABLED=false
 ```
@@ -57,8 +59,11 @@ AUTH_URL=https://app.example.com
 PUBLIC_APP_URL=https://app.example.com
 ```
 
-`AUTH_CONFIG_ENCRYPTION_KEY` encrypts stored OAuth provider secrets. Keep it backed
-up; losing it prevents decrypting saved provider secrets.
+`TOKEN_DIGEST_SECRET` keys one-time token digests for password reset, email
+verification, MFA session handoff, and OAuth login handoff tokens. Changing it
+invalidates outstanding one-time tokens safely. `AUTH_CONFIG_ENCRYPTION_KEY`
+encrypts stored OAuth provider secrets. Keep it backed up; losing it prevents
+decrypting saved provider secrets.
 
 See `.env.example` and `.env.docker.example` for the full variable list.
 
@@ -284,7 +289,9 @@ Playwright forces local `NEXTAUTH_URL` and `PUBLIC_APP_URL` values when it start
 
 GitHub Actions provide CI, Docker image publishing, dependency review, security scanning, and release creation. Dependabot checks npm packages, GitHub Actions, and Docker base images weekly.
 
-The security workflow runs high-severity npm audit, Trivy filesystem scanning, and Trivy Docker image scanning. CodeQL is expected to run through GitHub default setup in repository settings. Moderate npm advisories are reviewed separately when upstream fixes require breaking changes.
+The security workflow runs high-severity npm audit, Trivy filesystem scanning, and Trivy Docker image scanning. CodeQL is expected to run through GitHub default setup in repository settings.
+
+Current dependency remediation replaces Nodemailer with EmailJS for direct SMTP sending and uses scoped npm overrides for vulnerable transitive packages that upstream dependencies have not yet bumped.
 
 ## Backups
 
@@ -328,7 +335,7 @@ The startup entrypoint applies database migrations automatically.
 ## Troubleshooting
 
 - If the container exits immediately, check `NEXTAUTH_SECRET`,
-  `AUTH_CONFIG_ENCRYPTION_KEY`, and `DATABASE_URL`.
+  `TOKEN_DIGEST_SECRET`, `AUTH_CONFIG_ENCRYPTION_KEY`, and `DATABASE_URL`.
 - If OAuth redirects to localhost or `0.0.0.0`, set `PUBLIC_APP_URL`,
   `NEXTAUTH_URL`, and `AUTH_URL` to the public HTTPS URL.
 - If Cloudflare Tunnel starts but the site is unavailable, confirm the public

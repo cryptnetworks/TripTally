@@ -6,7 +6,7 @@
 - Error summary: `npm install` failed with `ERESOLVE` because `next-auth@4.24.14` requires optional peer `nodemailer@^7.0.7`, while the root project requested `nodemailer@^8.0.9`.
 - Root cause: Nodemailer was upgraded past the peer range supported by the current NextAuth version.
 - Files changed: `package.json`, `package-lock.json`, `Dockerfile`.
-- Fix applied: Pinned Nodemailer to `^7.0.13`, regenerated the lockfile, and changed Docker dependency installation from `npm install` to `npm ci`.
+- Fix applied: Initially pinned Nodemailer to `^7.0.13`, regenerated the lockfile, and changed Docker dependency installation from `npm install` to `npm ci`. Nodemailer was later removed in Issue 6.
 - Verification commands: `npm ci`, `npm run build`, `docker build -t triptally:latest .`.
 - Status: Fixed.
 
@@ -36,6 +36,36 @@
 - Error summary: Trivy image scan could not run because the Docker image failed to build.
 - Root cause: Same Nodemailer peer dependency conflict as Issue 1.
 - Files changed: `package.json`, `package-lock.json`, `Dockerfile`, `.github/workflows/security.yml`.
-- Fix applied: Resolved the dependency conflict and made Docker installs reproducible with `npm ci`.
+- Fix applied: Resolved the dependency conflict, later replaced Nodemailer with EmailJS in Issue 6, and made Docker installs reproducible with `npm ci`.
 - Verification commands: `docker build -t triptally:latest .`, `npm run security:scan`.
+- Status: Fixed.
+
+## Issue 5: CodeQL flagged one-time token digests as weak password hashing
+
+- Date encountered: 2026-05-28
+- Error summary: CodeQL reported `Use of password hash with insufficient computational effort` for OAuth login and password reset token digest storage.
+- Root cause: One-time random tokens were stored as HMAC digests keyed by existing app secrets, but the helper did not use a dedicated token-digest secret and did not expose a timing-safe comparison helper for non-database comparisons.
+- Files changed: `lib/token-digest.ts`, `lib/config.ts`, `scripts/validate-config.mjs`, `docker-entrypoint.sh`, `.env.example`, `.env.docker.example`, `.github/workflows/ci.yml`, security docs, and token tests.
+- Fix applied: Added required `TOKEN_DIGEST_SECRET`, validate it at startup, keep raw one-time tokens out of storage, store only HMAC-SHA-256 digests, and add timing-safe digest comparison support.
+- Verification commands: `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
+- Status: Fixed.
+
+## Issue 6: Dependabot alerts for Nodemailer, uuid, PostCSS, and @hono/node-server
+
+- Date encountered: 2026-05-28
+- Error summary: Dependabot/npm audit reported moderate advisories for direct Nodemailer and transitive `uuid`, `postcss`, and `@hono/node-server`.
+- Root cause: The app used Nodemailer directly, NextAuth depended on vulnerable `uuid`, Next bundled vulnerable PostCSS, and Prisma dev tooling depended on vulnerable `@hono/node-server`.
+- Files changed: `package.json`, `package-lock.json`, `lib/email.ts`, `.github/dependabot.yml`, `README.md`, `SECURITY.md`, and wiki automation/security docs.
+- Fix applied: Replaced direct Nodemailer usage with EmailJS, removed `@types/nodemailer`, added scoped npm overrides for `uuid@11.1.1`, `postcss@8.5.15`, and `@hono/node-server@1.19.13`, and improved Dependabot grouping.
+- Verification commands: `npm ci`, `npm audit --json`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run build`, `npm run security:audit`, `npm run security:scan`, `docker build -t triptally:latest .`, `docker compose build triptally`.
+- Status: Fixed.
+
+## Issue 7: CVE-2026-33671 picomatch ReDoS finding
+
+- Date encountered: 2026-05-28
+- Error summary: Security scanning reported CVE-2026-33671, a high-severity ReDoS issue in vulnerable `picomatch` versions.
+- Root cause: `picomatch` is transitive through lint/build/test tooling, so it is not declared directly in `package.json`.
+- Files changed: `package-lock.json`.
+- Fix applied: Ran `npm update picomatch` and verified the installed tree resolves to patched versions: `picomatch@2.3.2` for the micromatch branch and `picomatch@4.0.4` for Vite/Vitest branches.
+- Verification commands: `npm ls picomatch --all`, `npm audit --audit-level=high`, `npm audit --json`, `npm run security:scan`, `docker build -t triptally:latest .`.
 - Status: Fixed.

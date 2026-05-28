@@ -35,7 +35,7 @@ The security workflow runs:
 
 CodeQL is expected to run through GitHub default setup in repository settings. The repo does not define an advanced CodeQL workflow because GitHub rejects advanced CodeQL SARIF uploads while default setup is enabled.
 
-Moderate npm advisories are reviewed but do not currently fail the high-threshold audit command. Do not run `npm audit fix --force` without reviewing breaking changes.
+Current npm audit output is expected to be clean. Vulnerable transitive dependencies may be pinned with scoped npm overrides when upstream packages lag patched versions. Do not run `npm audit fix --force` without reviewing breaking changes.
 
 ## Dependency Review
 
