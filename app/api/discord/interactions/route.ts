@@ -31,6 +31,10 @@ async function linkedUser(discordUserId: string) {
 
 export async function POST(request: Request) {
   const config = getAppConfig();
+  if (!config.discordEnabled) {
+    return NextResponse.json({ error: "Discord integration is disabled" }, { status: 404 });
+  }
+
   const body = await request.text();
   const signature = request.headers.get("x-signature-ed25519");
   const timestamp = request.headers.get("x-signature-timestamp");

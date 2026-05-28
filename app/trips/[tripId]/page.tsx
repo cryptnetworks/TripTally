@@ -9,6 +9,7 @@ import { PageShell } from "@/components/PageShell";
 import { SettlementList } from "@/components/SettlementList";
 import { calculateBalances } from "@/lib/calculations";
 import { createParticipant, deleteParticipant, deleteTrip } from "@/lib/actions";
+import { getAppConfig } from "@/lib/config";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +37,7 @@ export default async function TripDetailPage({
   const role = resolved.access.role;
   const canManageTrip = isTripManager(role);
   const canAddExpense = canCreateTripExpense(role);
+  const receiptsEnabled = getAppConfig().receiptUploadEnabled;
   const trip = await prisma.trip.findFirst({
     where: { id: tripId },
     include: {
@@ -126,7 +128,7 @@ export default async function TripDetailPage({
             Add Expense
           </Link>
         ) : null}
-        {canAddExpense ? (
+        {canAddExpense && receiptsEnabled ? (
           <Link className="btn-secondary" href={`/trips/${trip.id}/receipts/new`}>
             Upload Receipt
           </Link>

@@ -109,3 +109,13 @@
 - Fix applied: Added `permissions: contents: read` to CI, documented the CodeQL false positive at the HMAC line with a query-specific suppression, and added direct `picomatch@4.0.4` so the installed root package is explicitly patched.
 - Verification commands: `npm ls picomatch --all`, `npm run security:audit`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`.
 - Status: Fixed locally; not pushed.
+
+## Issue 12: PR readiness hardening for expansion branch
+
+- Date encountered: 2026-05-28
+- Error summary: Local PR review of `484b5cd` found hardening gaps around receipt path containment, receipt edit authorization, Discord replay resistance, unsafe legacy payment URLs, and default exposure of new receipt/Discord surfaces.
+- Root cause: The feature branch added the initial service boundaries and UI, but some new edges needed production safety checks before review.
+- Files changed: `lib/receipts/storage.ts`, `app/api/receipts/[receiptId]/file/route.ts`, `lib/actions/receipts.ts`, receipt pages, Discord security/interaction route, settlement UI, config/env docs, `.gitignore`, and focused tests.
+- Fix applied: Constrained receipt reads/writes to the configured upload directory, restricted receipt review/attachment to uploaders or managers, added Discord signature timestamp freshness checks, suppressed unsafe persisted payment URLs at render time, and gated receipt uploads plus Discord interactions behind explicit feature flags.
+- Verification commands: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run security:audit`.
+- Status: Fixed locally; not pushed.

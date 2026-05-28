@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { uploadReceipt } from "@/lib/actions";
+import { getAppConfig } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { requireTripAccess } from "@/lib/trip-access";
@@ -16,17 +17,20 @@ export default async function NewReceiptPage({
 }) {
   const { tripId } = await params;
   const query = await searchParams;
+  if (!getAppConfig().receiptUploadEnabled) notFound();
+
   const user = await requireUser();
   const resolved = await requireTripAccess(tripId, user.id);
   if (!canCreateTripExpense(resolved.access.role)) notFound();
+  const canManageTrip = resolved.access.role === "owner" || resolved.access.role === "admin";
 
   const trip = await prisma.trip.findUnique({
     where: { id: tripId },
     include: {
       expenses: {
-        where: {
-          OR: [{ createdByUserId: user.id }, { trip: { members: { some: { userId: user.id } } } }]
-        },
+        where: canManageTrip
+          ? { status: { not: "settled" } }
+          : { createdByUserId: user.id, status: { not: "settled" } },
         orderBy: { date: "desc" }
       }
     }

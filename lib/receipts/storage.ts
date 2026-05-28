@@ -35,6 +35,21 @@ export function safeOriginalFilename(name: string) {
   return basename || "receipt";
 }
 
+function safePathSegment(value: string) {
+  return value.replaceAll(/[^\w.-]/g, "_");
+}
+
+export function resolveReceiptPathInsideUploadDir(storedPath: string) {
+  const config = receiptUploadConfig();
+  const uploadDir = path.resolve(config.uploadDir);
+  const resolvedPath = path.resolve(storedPath);
+  const relativePath = path.relative(uploadDir, resolvedPath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    throw new Error("Resolved receipt path escaped upload directory.");
+  }
+  return resolvedPath;
+}
+
 export async function storeReceiptFile({
   tripId,
   receiptId,
@@ -47,13 +62,13 @@ export async function storeReceiptFile({
   extension: string;
 }) {
   const config = receiptUploadConfig();
-  const receiptDir = path.join(config.uploadDir, tripId, receiptId);
+  const receiptDir = path.join(
+    config.uploadDir,
+    safePathSegment(tripId),
+    safePathSegment(receiptId)
+  );
   const storedFilename = `original.${extension}`;
-  const storedPath = path.join(receiptDir, storedFilename);
-
-  if (!storedPath.startsWith(config.uploadDir)) {
-    throw new Error("Resolved receipt path escaped upload directory.");
-  }
+  const storedPath = resolveReceiptPathInsideUploadDir(path.join(receiptDir, storedFilename));
 
   await mkdir(receiptDir, { recursive: true });
   await writeFile(storedPath, Buffer.from(await file.arrayBuffer()));

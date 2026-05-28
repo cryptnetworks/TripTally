@@ -55,6 +55,7 @@ NEXTAUTH_SECRET=paste-generated-secret-here
 TOKEN_DIGEST_SECRET=paste-generated-secret-here
 AUTH_CONFIG_ENCRYPTION_KEY=paste-generated-secret-here
 SMTP_ENABLED=false
+RECEIPT_UPLOAD_ENABLED=false
 RECEIPT_UPLOAD_DIR=uploads/receipts
 MAX_RECEIPT_UPLOAD_MB=10
 ITEM_LOOKUP_ENABLED=false
@@ -250,11 +251,13 @@ payments, store payment credentials, or call payment provider APIs. Settlement
 cards show enabled trip-member-visible payment methods for the person receiving
 money.
 
-Receipt uploads are stored on the local filesystem under `RECEIPT_UPLOAD_DIR`.
-Use a Docker-mounted path such as `/app/data/uploads/receipts` in production.
-Allowed uploads are PDF, JPEG, PNG, HEIC, and HEIF up to
-`MAX_RECEIPT_UPLOAD_MB`. Receipt files are served only through authenticated
-download routes that check trip membership.
+Receipt uploads are off by default and should be enabled explicitly with
+`RECEIPT_UPLOAD_ENABLED=true` after `RECEIPT_UPLOAD_DIR` points at a persistent,
+non-public filesystem path. Use a Docker-mounted path such as
+`/app/data/uploads/receipts` in production. Allowed uploads are PDF, JPEG, PNG,
+HEIC, and HEIF up to `MAX_RECEIPT_UPLOAD_MB`. Receipt files are served only
+through authenticated download routes that check trip membership and keep file
+paths inside the configured upload directory.
 
 Receipt parsing uses a local heuristic parser by default. It extracts obvious
 receipt text from text-like PDFs, attempts merchant/date/subtotal/tax/tip/total
@@ -265,10 +268,10 @@ Retail item lookup is disabled by default. The `mock` provider is available for
 development and tests. Real retailer providers are intentionally disabled until
 official or affiliate API credentials and provider implementations are added.
 
-Discord integration uses an HTTP interactions endpoint at
-`/api/discord/interactions`. Configure Discord to use that public endpoint, set
-`DISCORD_PUBLIC_KEY`, and run the command registration helper when bot
-credentials are available:
+Discord integration is off by default. Set `DISCORD_ENABLED=true` before
+exposing the HTTP interactions endpoint at `/api/discord/interactions`.
+Configure Discord to use that public endpoint, set `DISCORD_PUBLIC_KEY`, and run
+the command registration helper when bot credentials are available:
 
 ```bash
 npm run discord:register

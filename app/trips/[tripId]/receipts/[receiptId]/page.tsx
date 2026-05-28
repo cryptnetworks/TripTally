@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { saveReceiptReview } from "@/lib/actions";
+import { getAppConfig } from "@/lib/config";
 import { dateInputValue, formatCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { requireTripAccess } from "@/lib/trip-access";
+import { isTripManager } from "@/lib/trip-permissions";
 
 export default async function ReceiptReviewPage({
   params,
@@ -17,8 +19,10 @@ export default async function ReceiptReviewPage({
 }) {
   const { tripId, receiptId } = await params;
   const query = await searchParams;
+  if (!getAppConfig().receiptUploadEnabled) notFound();
+
   const user = await requireUser();
-  await requireTripAccess(tripId, user.id);
+  const resolved = await requireTripAccess(tripId, user.id);
 
   const receipt = await prisma.receipt.findFirst({
     where: { id: receiptId, tripId },
@@ -33,6 +37,7 @@ export default async function ReceiptReviewPage({
   });
   if (!receipt) notFound();
 
+  const canEditReceipt = receipt.uploaderUserId === user.id || isTripManager(resolved.access.role);
   const action = saveReceiptReview.bind(null, tripId, receipt.id);
 
   return (
@@ -57,6 +62,7 @@ export default async function ReceiptReviewPage({
                 </label>
                 <input
                   className="field"
+                  disabled={!canEditReceipt}
                   id="merchant"
                   name="merchant"
                   defaultValue={receipt.merchant || ""}
@@ -69,6 +75,7 @@ export default async function ReceiptReviewPage({
                 </label>
                 <input
                   className="field"
+                  disabled={!canEditReceipt}
                   id="receiptDate"
                   name="receiptDate"
                   type="date"
@@ -84,6 +91,7 @@ export default async function ReceiptReviewPage({
                   </label>
                   <input
                     className="field"
+                    disabled={!canEditReceipt}
                     id={field}
                     name={field}
                     type="number"
@@ -101,6 +109,7 @@ export default async function ReceiptReviewPage({
                 </label>
                 <select
                   className="field"
+                  disabled={!canEditReceipt}
                   id="splitMode"
                   name="splitMode"
                   defaultValue={receipt.splitMode}
@@ -113,15 +122,23 @@ export default async function ReceiptReviewPage({
                 <label className="label" htmlFor="status">
                   Review status
                 </label>
-                <select className="field" id="status" name="status" defaultValue={receipt.status}>
+                <select
+                  className="field"
+                  disabled={!canEditReceipt}
+                  id="status"
+                  name="status"
+                  defaultValue={receipt.status}
+                >
                   <option value="needs_review">Needs review</option>
                   <option value="ready">Ready</option>
                 </select>
               </div>
             </div>
-            <button className="btn-primary" type="submit">
-              Save review
-            </button>
+            {canEditReceipt ? (
+              <button className="btn-primary" type="submit">
+                Save review
+              </button>
+            ) : null}
           </form>
         </section>
 

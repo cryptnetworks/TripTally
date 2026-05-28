@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCurrentUserId } from "@/lib/actions/session";
 import { writeAuditLog } from "@/lib/audit";
+import { getAppConfig } from "@/lib/config";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { defaultReceiptParser } from "@/lib/receipts/parser";
@@ -16,7 +17,7 @@ import {
   validateReceiptFile
 } from "@/lib/receipts/storage";
 import { requireTripAccess } from "@/lib/trip-access";
-import { canCreateTripExpense } from "@/lib/trip-permissions";
+import { canCreateTripExpense, canEditExpense, isTripManager } from "@/lib/trip-permissions";
 import { formString, idSchema, parseDateInput } from "@/lib/validation";
 
 function nullableDecimal(value: string) {
@@ -26,6 +27,8 @@ function nullableDecimal(value: string) {
 }
 
 export async function uploadReceipt(tripId: string, formData: FormData) {
+  if (!getAppConfig().receiptUploadEnabled) redirect(`/trips/${tripId}?error=receipts_disabled`);
+
   const userId = await requireCurrentUserId();
   const parsedTripId = idSchema.safeParse(tripId);
   if (!parsedTripId.success) redirect("/dashboard");
@@ -42,6 +45,9 @@ export async function uploadReceipt(tripId: string, formData: FormData) {
   if (expenseId) {
     const expense = await prisma.expense.findFirst({ where: { id: expenseId, tripId } });
     if (!expense) redirect(`/trips/${tripId}/receipts/new?error=expense`);
+    if (!canEditExpense(resolved.access.role, userId, expense)) {
+      redirect(`/trips/${tripId}/receipts/new?error=forbidden`);
+    }
   }
 
   const receiptId = randomUUID();
@@ -119,14 +125,19 @@ export async function uploadReceipt(tripId: string, formData: FormData) {
 }
 
 export async function saveReceiptReview(tripId: string, receiptId: string, formData: FormData) {
+  if (!getAppConfig().receiptUploadEnabled) redirect(`/trips/${tripId}?error=receipts_disabled`);
+
   const userId = await requireCurrentUserId();
   const parsedTripId = idSchema.safeParse(tripId);
   const parsedReceiptId = idSchema.safeParse(receiptId);
   if (!parsedTripId.success || !parsedReceiptId.success) redirect("/dashboard");
 
-  await requireTripAccess(tripId, userId);
+  const resolved = await requireTripAccess(tripId, userId);
   const receipt = await prisma.receipt.findFirst({ where: { id: receiptId, tripId } });
   if (!receipt) redirect(`/trips/${tripId}`);
+  if (receipt.uploaderUserId !== userId && !isTripManager(resolved.access.role)) {
+    redirect(`/trips/${tripId}?error=forbidden`);
+  }
 
   const merchant = formString(formData, "merchant") || null;
   const receiptDate = parseDateInput(formString(formData, "receiptDate"));

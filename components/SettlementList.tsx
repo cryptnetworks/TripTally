@@ -1,5 +1,6 @@
 import type { Settlement } from "@/lib/calculations";
 import { paymentProviderLabel, type SettlementPaymentMethod } from "@/lib/payments";
+import { isSafeHttpUrl } from "@/lib/url";
 
 export function SettlementList({
   settlements,
@@ -28,7 +29,7 @@ export function SettlementList({
           {paymentMethodsByParticipantId[settlement.creditorId]?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {paymentMethodsByParticipantId[settlement.creditorId].map((method) =>
-                method.url ? (
+                method.url && isSafeHttpUrl(method.url) ? (
                   <a
                     key={`${method.provider}-${method.url}`}
                     className="btn-secondary min-h-9 px-3 py-1.5"

@@ -2,6 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolveReceiptPathInsideUploadDir } from "@/lib/receipts/storage";
 import { requireUser } from "@/lib/session";
 import { resolveTripAccess } from "@/lib/trip-access";
 
@@ -17,8 +18,16 @@ export async function GET(
   const access = await resolveTripAccess(receipt.tripId, user.id);
   if (!access) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const fileStat = await stat(receipt.storedPath);
-  const stream = createReadStream(receipt.storedPath);
+  let resolvedPath: string;
+  let fileStat: Awaited<ReturnType<typeof stat>>;
+  try {
+    resolvedPath = resolveReceiptPathInsideUploadDir(receipt.storedPath);
+    fileStat = await stat(resolvedPath);
+  } catch {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const stream = createReadStream(resolvedPath);
   return new Response(stream as unknown as BodyInit, {
     headers: {
       "content-type": receipt.mimeType,

@@ -64,6 +64,7 @@ const smtpEnabled = stripQuotes(process.env.SMTP_ENABLED || "false") === "true";
 const smtpPort = Number(stripQuotes(process.env.SMTP_PORT || "587"));
 const smtpSecure = stripQuotes(process.env.SMTP_SECURE || "false") === "true";
 const resetMinutes = Number(stripQuotes(process.env.PASSWORD_RESET_TOKEN_MINUTES || "45"));
+const discordEnabled = stripQuotes(process.env.DISCORD_ENABLED || "false") === "true";
 
 if (!["development", "test", "production"].includes(nodeEnv)) {
   fail("NODE_ENV must be development, test, or production.");
@@ -140,12 +141,17 @@ if (smtpEnabled) {
   }
 }
 
+if (discordEnabled && !stripQuotes(process.env.DISCORD_PUBLIC_KEY || "")) {
+  fail("DISCORD_PUBLIC_KEY is required when DISCORD_ENABLED=true.");
+}
+
 console.info(
   JSON.stringify({
     level: "info",
     event: "config.valid",
     time: new Date().toISOString(),
     nodeEnv,
-    smtpEnabled
+    smtpEnabled,
+    discordEnabled
   })
 );

@@ -83,12 +83,14 @@ Use `SMTP_SECURE=false` for port `587` with STARTTLS. Use `SMTP_SECURE=true` for
 ## Receipts
 
 ```env
+RECEIPT_UPLOAD_ENABLED=false
 RECEIPT_UPLOAD_DIR=uploads/receipts
 MAX_RECEIPT_UPLOAD_MB=10
 ```
 
-For Docker, prefer `RECEIPT_UPLOAD_DIR=/app/data/uploads/receipts` so uploaded
-files live in the persistent app volume.
+Receipt uploads are disabled until `RECEIPT_UPLOAD_ENABLED=true` is set. For
+Docker, prefer `RECEIPT_UPLOAD_DIR=/app/data/uploads/receipts` so uploaded files
+live in the persistent app volume and are not served as static public files.
 
 ## Item Lookup
 
@@ -110,6 +112,7 @@ implementations are configured.
 
 ```env
 APP_BASE_URL=https://app.example.com
+DISCORD_ENABLED=false
 DISCORD_BOT_TOKEN=
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
@@ -117,6 +120,7 @@ DISCORD_PUBLIC_KEY=
 DISCORD_GUILD_ID=
 ```
 
-Configure Discord interactions to call `/api/discord/interactions` on the public
-app URL. `DISCORD_GUILD_ID` is optional and useful for development command
-registration.
+Set `DISCORD_ENABLED=true` only when the public key and bot credentials are
+configured. Configure Discord interactions to call `/api/discord/interactions`
+on the public app URL. `DISCORD_GUILD_ID` is optional and useful for development
+command registration.
