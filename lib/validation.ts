@@ -34,7 +34,14 @@ export const registerSchema = z
 
 export const loginSchema = z.object({
   email: z.email().trim().toLowerCase().max(120),
-  password: z.string().min(1).max(128)
+  password: z.string().min(1).max(128),
+  twoFactorCode: z
+    .string()
+    .trim()
+    .max(12)
+    .optional()
+    .or(z.literal(""))
+    .transform((value) => value || undefined)
 });
 
 export const forgotPasswordSchema = z.object({
@@ -67,6 +74,15 @@ export const accountPasswordSchema = z
     message: "Passwords must match.",
     path: ["confirmPassword"]
   });
+
+export const verificationTokenSchema = z.string().trim().min(32).max(256);
+
+export const twoFactorCodeSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/)
+});
 
 export const tripSchema = z
   .object({

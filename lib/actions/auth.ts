@@ -3,16 +3,25 @@
 import * as bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { logger } from "@/lib/logger";
+import { createEmailVerificationForUser, verifyEmailToken } from "@/lib/email-verification";
 import { completePasswordReset, createPasswordResetForUser } from "@/lib/password-reset";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  createAuthenticatorSetup,
+  enableAuthenticator,
+  type TwoFactorMethod,
+  twoFactorMethods
+} from "@/lib/two-factor";
 import {
   accountPasswordSchema,
   accountProfileSchema,
   forgotPasswordSchema,
   formString,
   registerSchema,
-  resetPasswordSchema
+  resetPasswordSchema,
+  twoFactorCodeSchema,
+  verificationTokenSchema
 } from "@/lib/validation";
 import { requireUser } from "@/lib/session";
 
@@ -50,7 +59,7 @@ export async function registerUser(formData: FormData) {
     redirect("/register?error=exists");
   }
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       username: parsed.data.username,
       email,
@@ -58,8 +67,10 @@ export async function registerUser(formData: FormData) {
     }
   });
 
+  await createEmailVerificationForUser(user);
+
   logger.info("auth.register.created", { email });
-  redirect("/login?registered=1");
+  redirect("/login?registered=1&verify=1");
 }
 
 export async function requestPasswordReset(formData: FormData) {
@@ -114,6 +125,38 @@ export async function resetPassword(formData: FormData) {
   redirect("/login?reset=1");
 }
 
+export async function verifyEmailAddress(formData: FormData) {
+  const token = formString(formData, "token");
+  const parsed = verificationTokenSchema.safeParse(token);
+
+  if (!parsed.success) {
+    redirect("/verify-email?error=invalid");
+  }
+
+  const success = await verifyEmailToken(parsed.data);
+  redirect(success ? "/login?verified=1" : "/verify-email?error=invalid");
+}
+
+export async function resendVerificationEmail(formData: FormData) {
+  const email = formString(formData, "email").trim().toLowerCase();
+  const rateLimit = checkRateLimit(`email-verification:${email}`, {
+    limit: 3,
+    windowMs: 60 * 60 * 1000
+  });
+
+  if (!rateLimit.allowed) {
+    logger.warn("auth.email_verification.resend.rate_limited", { email });
+    redirect("/login?verificationSent=1");
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user && !user.emailVerifiedAt) {
+    await createEmailVerificationForUser(user);
+  }
+
+  redirect("/login?verificationSent=1");
+}
+
 export async function updateAccountProfile(formData: FormData) {
   const user = await requireUser();
   const parsed = accountProfileSchema.safeParse({
@@ -138,16 +181,27 @@ export async function updateAccountProfile(formData: FormData) {
     redirect("/account?profile=duplicate");
   }
 
-  await prisma.user.update({
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    select: { email: true }
+  });
+  const emailChanged = currentUser.email !== parsed.data.email;
+
+  const updatedUser = await prisma.user.update({
     where: { id: user.id },
     data: {
       username: parsed.data.username,
-      email: parsed.data.email
+      email: parsed.data.email,
+      emailVerifiedAt: emailChanged ? null : undefined
     }
   });
 
+  if (emailChanged) {
+    await createEmailVerificationForUser(updatedUser);
+  }
+
   logger.info("account.profile.updated", { userId: user.id });
-  redirect("/account?profile=updated");
+  redirect(emailChanged ? "/account?profile=verify-email" : "/account?profile=updated");
 }
 
 export async function updateAccountPassword(formData: FormData) {
@@ -188,4 +242,63 @@ export async function updateAccountPassword(formData: FormData) {
 
   logger.info("account.password.updated", { userId: user.id });
   redirect("/account?password=updated");
+}
+
+export async function setTwoFactorMethod(formData: FormData) {
+  const user = await requireUser();
+  const method = formString(formData, "method") as TwoFactorMethod;
+
+  if (!twoFactorMethods.includes(method)) {
+    redirect("/account?twoFactor=invalid");
+  }
+
+  const dbUser = await prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    select: {
+      authenticatorEnabled: true
+    }
+  });
+
+  if (method === "authenticator" && !dbUser.authenticatorEnabled) {
+    redirect("/account?twoFactor=setup-required");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { twoFactorMethod: method }
+  });
+
+  logger.info("account.two_factor.method_updated", { userId: user.id, method });
+  redirect("/account?twoFactor=updated");
+}
+
+export async function startAuthenticatorSetup() {
+  const sessionUser = await requireUser();
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: sessionUser.id },
+    select: { id: true, email: true }
+  });
+  const setup = await createAuthenticatorSetup(user);
+  const params = new URLSearchParams({
+    authenticatorSecret: setup.secret,
+    authenticatorUri: setup.uri
+  });
+
+  redirect(`/account?${params.toString()}`);
+}
+
+export async function verifyAuthenticatorSetup(formData: FormData) {
+  const user = await requireUser();
+  const parsed = twoFactorCodeSchema.safeParse({
+    code: formString(formData, "code")
+  });
+
+  if (!parsed.success) {
+    redirect("/account?twoFactor=invalid-code");
+  }
+
+  const success = await enableAuthenticator(user.id, parsed.data.code);
+  redirect(
+    success ? "/account?twoFactor=authenticator-enabled" : "/account?twoFactor=invalid-code"
+  );
 }

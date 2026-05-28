@@ -91,11 +91,11 @@ npm run test:integration
 npm run build
 ```
 
-## Password Reset Email
+## Account Email And Two-Factor Auth
 
-SMTP email is optional. Leave `SMTP_ENABLED=false` to run TripTally without outbound email. Password reset requests will still return the same generic response, and in development the reset URL is logged to stdout for testing.
+SMTP email is optional for local development, but production accounts should enable it. Trip Tally uses transactional email for account verification, password reset links, and email-based two-factor sign-in codes. Leave `SMTP_ENABLED=false` only when you are developing locally; development mode logs verification and reset links to stdout for testing.
 
-To send password reset links, use SMTP credentials from a provider such as Resend, Postmark, Mailgun, SendGrid, or a traditional SMTP host:
+Use SMTP credentials from a provider such as Resend, Postmark, Mailgun, SendGrid, or a traditional SMTP host:
 
 ```env
 SMTP_ENABLED=true
@@ -105,12 +105,13 @@ SMTP_SECURE=false
 SMTP_USER=your-smtp-username
 SMTP_PASSWORD=your-smtp-password
 SMTP_FROM=no-reply@your-domain.example
-EMAIL_APP_NAME=TripTally
+EMAIL_APP_NAME="Trip Tally"
 PASSWORD_RESET_TOKEN_MINUTES=45
 ```
 
-Reset tokens are generated with secure random bytes, stored only as SHA-256 hashes, expire after 30-60 minutes, and are marked used after a successful reset. The forgot-password form always shows the same response so it does not reveal whether an email exists.
-If SMTP is disabled or delivery fails, the app logs the condition and does not break login, registration, or the rest of the app.
+For Mailgun and most SMTP providers on port `587`, keep `SMTP_SECURE=false`; that port uses STARTTLS. Use `SMTP_SECURE=true` only for implicit TLS ports such as `465`.
+
+New users must verify their email before login. Password reset and email verification tokens are generated with secure random bytes, stored only as SHA-256 hashes, expire, and are marked used after success. Two-factor authentication can be disabled, set to email codes, or set to authenticator-app TOTP from the account settings page.
 
 Mobile end-to-end tests use Playwright:
 

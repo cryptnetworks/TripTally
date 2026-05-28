@@ -1,9 +1,14 @@
 export {
   registerUser,
   requestPasswordReset,
+  resendVerificationEmail,
   resetPassword,
+  setTwoFactorMethod,
+  startAuthenticatorSetup,
   updateAccountPassword,
-  updateAccountProfile
+  updateAccountProfile,
+  verifyAuthenticatorSetup,
+  verifyEmailAddress
 } from "@/lib/actions/auth";
 export { createTrip, deleteTrip, updateTrip } from "@/lib/actions/trips";
 export {

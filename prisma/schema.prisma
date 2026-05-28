@@ -11,12 +11,47 @@ model User {
   username            String               @unique
   email               String               @unique
   passwordHash        String
+  emailVerifiedAt     DateTime?
+  twoFactorMethod     String               @default("none")
+  authenticatorEnabled Boolean              @default(false)
+  authenticatorSecretEncrypted String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   trips               Trip[]
   passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  twoFactorChallenges TwoFactorChallenge[]
 
   @@map("users")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model TwoFactorChallenge {
+  id        String    @id @default(cuid())
+  codeHash  String
+  method    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("two_factor_challenges")
 }
 
 model PasswordResetToken {

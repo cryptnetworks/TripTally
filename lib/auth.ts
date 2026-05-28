@@ -4,6 +4,11 @@ import * as bcrypt from "bcryptjs";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  startEmailTwoFactorChallenge,
+  verifyAuthenticatorCode,
+  verifyEmailTwoFactorCode
+} from "@/lib/two-factor";
 import { loginSchema } from "@/lib/validation";
 
 const useSecureCookies =
@@ -57,12 +62,14 @@ export const authOptions: NextAuthOptions = {
       name: "Email and password",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        twoFactorCode: { label: "Verification code", type: "text" }
       },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse({
           email: credentials?.email,
-          password: credentials?.password
+          password: credentials?.password,
+          twoFactorCode: credentials?.twoFactorCode
         });
 
         if (!parsed.success) {
@@ -70,7 +77,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const { email, password } = parsed.data;
+        const { email, password, twoFactorCode } = parsed.data;
         const rateLimit = checkRateLimit(`login:${email}`, {
           limit: 8,
           windowMs: 15 * 60 * 1000
@@ -90,6 +97,40 @@ export const authOptions: NextAuthOptions = {
         if (!isValid) {
           logger.warn("auth.login.invalid_password", { email, userId: user.id });
           return null;
+        }
+
+        if (!user.emailVerifiedAt) {
+          logger.warn("auth.login.email_unverified", { email, userId: user.id });
+          throw new Error("EMAIL_VERIFICATION_REQUIRED");
+        }
+
+        if (user.twoFactorMethod === "email") {
+          if (!twoFactorCode) {
+            await startEmailTwoFactorChallenge(user);
+            throw new Error("EMAIL_OTP_REQUIRED");
+          }
+
+          if (!(await verifyEmailTwoFactorCode(user.id, twoFactorCode))) {
+            return null;
+          }
+        }
+
+        if (user.twoFactorMethod === "authenticator") {
+          if (!twoFactorCode) {
+            throw new Error("AUTHENTICATOR_OTP_REQUIRED");
+          }
+
+          if (
+            !(await verifyAuthenticatorCode(
+              {
+                id: user.id,
+                authenticatorSecretEncrypted: user.authenticatorSecretEncrypted
+              },
+              twoFactorCode
+            ))
+          ) {
+            return null;
+          }
         }
 
         logger.info("auth.login.success", { email, userId: user.id });

@@ -5,7 +5,14 @@ import { BrandLogo } from "@/components/BrandLogo";
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ registered?: string; reset?: string; logout?: string }>;
+  searchParams: Promise<{
+    registered?: string;
+    reset?: string;
+    logout?: string;
+    verify?: string;
+    verified?: string;
+    verificationSent?: string;
+  }>;
 }) {
   const query = await searchParams;
 
@@ -21,7 +28,22 @@ export default async function LoginPage({
         </p>
         {query.registered ? (
           <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
-            Account created. Login to continue.
+            Account created. Verify your email before logging in.
+          </p>
+        ) : null}
+        {query.verify ? (
+          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
+            Check your inbox for a verification link.
+          </p>
+        ) : null}
+        {query.verified ? (
+          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
+            Email verified. Login to continue.
+          </p>
+        ) : null}
+        {query.verificationSent ? (
+          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
+            If that email needs verification, a new link has been sent.
           </p>
         ) : null}
         {query.reset ? (
