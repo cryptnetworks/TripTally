@@ -89,3 +89,13 @@
 - Fix applied: Added `TripMember`, participant user links, expense ownership/status fields, trip-scoped audit metadata, server-side permission helpers, collaborative expense filters, activity feed, and tests for permission/status behavior.
 - Verification commands: `npx prisma validate`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 - Status: In progress on `feature/collaborative-purchases-permissions`.
+
+## Issue 10: Payments, receipts, lookup, and Discord expansion
+
+- Date encountered: 2026-05-28
+- Error summary: The app needed settlement payment links, receipt upload/parsing, retailer-assisted item entry, and Discord account linking/commands.
+- Root cause: The collaborative ledger existed, but settlement convenience, receipt evidence, item entry assistance, and chat integration had no persistent models or service boundaries.
+- Files changed: Prisma schema and migration, account/trip/receipt pages, receipt/download and lookup/Discord API routes, payment/receipt/item lookup/Discord services, Docker Compose, environment examples, tests, and documentation.
+- Fix applied: Added external payment methods, local receipt storage and parser review, itemized receipt split helpers, server-side item lookup with mock provider and cache, Discord signed interactions and linking tokens, and docs for configuration/security.
+- Verification commands: `npx prisma validate`, `npx prisma migrate deploy`, `npm run format:check`, `npm run typecheck`, `npm test`.
+- Status: In progress locally on `feature/local-major-expansion`; not pushed.

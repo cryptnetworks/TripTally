@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ItemLookupBox } from "@/components/item-lookup/ItemLookupBox";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -56,6 +57,7 @@ export default async function EditExpensePage({
           <DeleteButton action={removeExpense} label={`Delete ${expense.title}`} />
         </div>
         <form className="grid gap-4" action={action} data-testid="expense-form">
+          <ItemLookupBox />
           <div>
             <label className="label" htmlFor="title">
               Title

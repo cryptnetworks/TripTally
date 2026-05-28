@@ -26,3 +26,6 @@ export {
   updateParticipant
 } from "@/lib/actions/participants";
 export { createExpense, deleteExpense, updateExpense } from "@/lib/actions/expenses";
+export { deletePaymentMethod, savePaymentMethod } from "@/lib/actions/payments";
+export { saveReceiptReview, uploadReceipt } from "@/lib/actions/receipts";
+export { linkDiscordAccount, unlinkDiscordAccount } from "@/lib/actions/discord";

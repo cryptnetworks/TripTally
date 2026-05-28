@@ -6,6 +6,12 @@
 - Production cookies are secure and HTTP-only where applicable.
 - Protected server access validates the current session user against the database.
 - Deleted or disabled users are rejected even if a stale JWT exists.
+- Receipt files are stored outside public assets and served only after trip
+  membership authorization.
+- Payment methods store only external handles or links, never payment
+  credentials.
+- Retail lookup runs server-side so provider keys are not exposed to clients.
+- Discord interactions verify request signatures before processing commands.
 
 ## OAuth
 

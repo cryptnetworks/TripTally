@@ -26,6 +26,10 @@ model User {
   expensesCreated              Expense[]                @relation("ExpenseCreator")
   expensesPaid                 Expense[]                @relation("ExpensePaidByUser")
   expensesUpdated              Expense[]                @relation("ExpenseUpdater")
+  paymentMethods               PaymentMethod[]
+  receiptsUploaded             Receipt[]                @relation("ReceiptUploader")
+  discordAccount               DiscordAccount?
+  discordLinkTokens            DiscordLinkToken[]
   passwordResetTokens          PasswordResetToken[]
   emailVerificationTokens      EmailVerificationToken[]
   twoFactorChallenges          TwoFactorChallenge[]
@@ -172,6 +176,7 @@ model Trip {
   members      TripMember[]
   participants Participant[]
   expenses     Expense[]
+  receipts     Receipt[]
   auditLogs    AuditLog[]
 
   @@index([ownerId])
@@ -195,17 +200,18 @@ model TripMember {
 }
 
 model Participant {
-  id           String         @id @default(cuid())
-  name         String
-  email        String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  tripId       String
-  userId       String?
-  trip         Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user         User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  expensesPaid Expense[]      @relation("ExpensePayer")
-  shares       ExpenseShare[]
+  id            String                       @id @default(cuid())
+  name          String
+  email         String?
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+  tripId        String
+  userId        String?
+  trip          Trip                         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user          User?                        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  expensesPaid  Expense[]                    @relation("ExpensePayer")
+  shares        ExpenseShare[]
+  receiptSplits ReceiptLineItemParticipant[]
 
   @@index([tripId])
   @@index([userId])
@@ -233,6 +239,7 @@ model Expense {
   paidByUser      User?          @relation("ExpensePaidByUser", fields: [paidByUserId], references: [id], onDelete: SetNull)
   updatedBy       User?          @relation("ExpenseUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
   shares          ExpenseShare[]
+  receipts        Receipt[]
 
   @@index([tripId])
   @@index([payerId])
@@ -241,6 +248,138 @@ model Expense {
   @@index([updatedByUserId])
   @@index([tripId, status])
   @@map("expenses")
+}
+
+model PaymentMethod {
+  id         String   @id @default(cuid())
+  provider   String
+  label      String?
+  handle     String?
+  url        String?
+  visibility String   @default("trip_members")
+  notes      String?
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([provider])
+  @@map("payment_methods")
+}
+
+model Receipt {
+  id               String            @id @default(cuid())
+  originalFilename String
+  storedFilename   String
+  storedPath       String
+  mimeType         String
+  fileSize         Int
+  merchant         String?
+  receiptDate      DateTime?
+  subtotal         Decimal?
+  tax              Decimal?
+  tip              Decimal?
+  total            Decimal?
+  parserProvider   String            @default("local-heuristic")
+  parserConfidence Float             @default(0)
+  rawText          String?
+  parsedJson       String?
+  status           String            @default("needs_review")
+  splitMode        String            @default("simple")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  tripId           String
+  expenseId        String?
+  uploaderUserId   String
+  trip             Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  expense          Expense?          @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  uploader         User              @relation("ReceiptUploader", fields: [uploaderUserId], references: [id], onDelete: Cascade)
+  lineItems        ReceiptLineItem[]
+
+  @@index([tripId])
+  @@index([expenseId])
+  @@index([uploaderUserId])
+  @@index([tripId, status])
+  @@map("receipts")
+}
+
+model ReceiptLineItem {
+  id           String                       @id @default(cuid())
+  name         String
+  quantity     Decimal                      @default(1)
+  unitPrice    Decimal?
+  totalPrice   Decimal
+  category     String?
+  notes        String?
+  splitMethod  String                       @default("equal")
+  createdAt    DateTime                     @default(now())
+  updatedAt    DateTime                     @updatedAt
+  receiptId    String
+  receipt      Receipt                      @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  participants ReceiptLineItemParticipant[]
+
+  @@index([receiptId])
+  @@map("receipt_line_items")
+}
+
+model ReceiptLineItemParticipant {
+  id            String          @id @default(cuid())
+  role          String
+  lineItemId    String
+  participantId String
+  lineItem      ReceiptLineItem @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+  participant   Participant     @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([lineItemId, participantId, role])
+  @@index([participantId])
+  @@map("receipt_line_item_participants")
+}
+
+model RetailerLookupCache {
+  id         String   @id @default(cuid())
+  provider   String
+  query      String
+  externalId String?
+  resultJson String
+  error      String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([provider, query, externalId])
+  @@index([expiresAt])
+  @@map("retailer_lookup_cache")
+}
+
+model DiscordAccount {
+  id              String   @id @default(cuid())
+  discordUserId   String   @unique
+  discordUsername String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("discord_accounts")
+}
+
+model DiscordLinkToken {
+  id              String    @id @default(cuid())
+  tokenHash       String    @unique
+  discordUserId   String
+  discordUsername String?
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([discordUserId])
+  @@index([expiresAt])
+  @@map("discord_link_tokens")
 }
 
 model ExpenseShare {

@@ -20,6 +20,7 @@
     "security:audit": "npm audit --audit-level=high",
     "security:scan": "npm run security:audit",
     "validate:config": "node scripts/validate-config.mjs",
+    "discord:register": "node scripts/register-discord-commands.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts"
