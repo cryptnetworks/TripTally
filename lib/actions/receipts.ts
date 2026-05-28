@@ -52,7 +52,6 @@ export async function uploadReceipt(tripId: string, formData: FormData) {
 
   const receiptId = randomUUID();
   const stored = await storeReceiptFile({
-    tripId,
     receiptId,
     file,
     extension: validation.extension
