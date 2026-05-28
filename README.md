@@ -3,6 +3,19 @@
 TripTally is a Docker-deployable Next.js app for tracking group trip expenses,
 participants, balances, and settlement suggestions.
 
+## Features
+
+- Trip, participant, expense, balance, and settlement tracking
+- Credentials login with email verification and password reset
+- Email-code or authenticator-app MFA
+- Admin portal for users, auth providers, settings, and audit logs
+- OAuth login and account linking for Google, GitHub, Discord, and Facebook
+- Docker healthcheck at `/api/health`
+
+## Screenshots
+
+Screenshots are not committed yet. Add current dashboard, trip detail, account, and admin views here when a stable release UI is captured.
+
 ## Docker Image
 
 Pinned GHCR image:
@@ -46,6 +59,8 @@ PUBLIC_APP_URL=https://app.example.com
 
 `AUTH_CONFIG_ENCRYPTION_KEY` encrypts stored OAuth provider secrets. Keep it backed
 up; losing it prevents decrypting saved provider secrets.
+
+See `.env.example` and `.env.docker.example` for the full variable list.
 
 ## Run With Docker
 
@@ -229,6 +244,48 @@ https://app.example.com/api/auth/oauth/facebook/callback
 
 Provider client secrets are encrypted with `AUTH_CONFIG_ENCRYPTION_KEY`.
 
+## Local Development
+
+Use Node.js 22.
+
+```bash
+npm install
+cp .env.example .env
+npm run prisma:generate
+npm run prisma:migrate
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Testing And Quality Checks
+
+```bash
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run test:e2e
+npm run build
+npm run security:audit
+docker build -t triptally:ci .
+```
+
+End-to-end tests use Playwright:
+
+```bash
+npx playwright install
+npm run test:e2e
+```
+
+Playwright forces local `NEXTAUTH_URL` and `PUBLIC_APP_URL` values when it starts its own dev server.
+
+## Repository Automation
+
+GitHub Actions provide CI, Docker image publishing, dependency review, security scanning, and release creation. Dependabot checks npm packages, GitHub Actions, and Docker base images weekly.
+
+The security workflow runs high-severity npm audit, CodeQL, Trivy filesystem scanning, and Trivy Docker image scanning. Moderate npm advisories are reviewed separately when upstream fixes require breaking changes.
+
 ## Backups
 
 Back up SQLite:
@@ -289,3 +346,4 @@ The startup entrypoint applies database migrations automatically.
 - OAuth app-login handoff tokens are short-lived, single-use, and stored in an
   HTTP-only cookie.
 - Security headers are configured in `next.config.mjs`.
+- Report vulnerabilities privately. See `SECURITY.md`.

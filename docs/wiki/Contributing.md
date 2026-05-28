@@ -22,11 +22,15 @@ Run the same checks as CI:
 npm run validate:config
 npx prisma validate
 npm run lint
-npm run type-check
+npm run typecheck
 npm test
+npm run test:e2e
+npm run security:audit
 npm run build
 docker build -t triptally:ci .
 ```
+
+The Playwright configuration forces local `NEXTAUTH_URL` and `PUBLIC_APP_URL` values when it starts its own dev server. This keeps local e2e runs from inheriting production callback URLs from `.env`.
 
 ## Prisma Changes
 
@@ -50,6 +54,7 @@ For schema changes:
 - Unit tests live under `tests/unit`.
 - Integration tests live under `tests/integration`.
 - Playwright tests live under `tests/e2e`.
+- Security regression tests should be added for auth, session, CSRF, XSS, redirects, and header changes.
 
 Useful commands:
 

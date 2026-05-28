@@ -1,4 +1,47 @@
 import { expect, test } from "@playwright/test";
+import { DatabaseSync } from "node:sqlite";
+
+let previousRequireEmailVerification: string | null = null;
+
+function sqliteDatabasePath() {
+  const databaseUrl = process.env.DATABASE_URL ?? "file:./dev.db";
+  if (!databaseUrl.startsWith("file:")) {
+    throw new Error("The mobile e2e test setup currently expects a SQLite DATABASE_URL.");
+  }
+
+  return databaseUrl.replace(/^file:/, "");
+}
+
+test.beforeAll(() => {
+  const db = new DatabaseSync(sqliteDatabasePath());
+  const existingSetting = db
+    .prepare("SELECT value FROM app_settings WHERE key = ?")
+    .get("requireEmailVerification") as { value: string } | undefined;
+
+  previousRequireEmailVerification = existingSetting?.value ?? null;
+
+  db.prepare(
+    `INSERT INTO app_settings (key, value, updatedAt)
+     VALUES (?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updatedAt = CURRENT_TIMESTAMP`
+  ).run("requireEmailVerification", "false");
+
+  db.close();
+});
+
+test.afterAll(() => {
+  const db = new DatabaseSync(sqliteDatabasePath());
+
+  if (previousRequireEmailVerification === null) {
+    db.prepare("DELETE FROM app_settings WHERE key = ?").run("requireEmailVerification");
+  } else {
+    db.prepare(
+      "UPDATE app_settings SET value = ?, updatedAt = CURRENT_TIMESTAMP WHERE key = ?"
+    ).run(previousRequireEmailVerification, "requireEmailVerification");
+  }
+
+  db.close();
+});
 
 test("mobile user can register, create a trip, add a participant, and add an expense", async ({
   page

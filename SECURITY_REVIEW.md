@@ -37,9 +37,12 @@ Configured globally:
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy`
 - `Strict-Transport-Security`
+- `Cross-Origin-Opener-Policy: same-origin`
+- Password reset, email verification, MFA session handoff, and OAuth handoff tokens are stored as keyed HMAC digests instead of raw tokens or unsalted lookup hashes.
 
 ## Residual Notes
 
 - Provider token revocation on logout is not implemented because provider access/refresh tokens are not stored.
 - If provider token storage is added later, tokens must be encrypted at rest, scoped minimally, expired/rotated, and revoked on unlink/logout where the provider supports revocation.
 - The CSP permits inline scripts/styles for Next.js compatibility and the existing theme bootstrap script. Tightening this further would require nonce/hash plumbing for framework and app inline scripts.
+- `npm audit` currently reports moderate advisories in upstream Next.js, NextAuth, Prisma, and Nodemailer dependency chains. No high or critical advisories were present during this review; unsafe npm-suggested major downgrades were not applied.

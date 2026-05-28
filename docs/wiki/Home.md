@@ -14,6 +14,7 @@ This wiki is the operational and contributor documentation for the project.
 - [Email and MFA](Email-and-MFA)
 - [Backups and Updates](Backups-and-Updates)
 - [Security Model](Security-Model)
+- [Repository Automation](Repository-Automation)
 - [Architecture](Architecture)
 - [Contributing](Contributing)
 - [Troubleshooting](Troubleshooting)
@@ -33,3 +34,4 @@ docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862
 - OAuth login and account linking for Google, GitHub, Discord, and Facebook
 - Docker healthcheck at `/api/health`
 - SQLite persistence in the Docker volume at `/app/data`
+- CI, Docker image publishing, dependency review, Dependabot, and security scan automation

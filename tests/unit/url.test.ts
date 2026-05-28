@@ -22,8 +22,8 @@ describe("public URLs", () => {
     });
 
     expect(publicBaseUrl(request)).toBe("https://triptally.idiots.cc");
-    expect(publicUrl("/login?oauthToken=test", request).toString()).toBe(
-      "https://triptally.idiots.cc/login?oauthToken=test"
+    expect(publicUrl("/login?oauth=complete", request).toString()).toBe(
+      "https://triptally.idiots.cc/login?oauth=complete"
     );
   });
 
