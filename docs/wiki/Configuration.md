@@ -79,3 +79,48 @@ PASSWORD_RESET_TOKEN_MINUTES=45
 ```
 
 Use `SMTP_SECURE=false` for port `587` with STARTTLS. Use `SMTP_SECURE=true` for implicit TLS ports such as `465`.
+
+## Receipts
+
+```env
+RECEIPT_UPLOAD_ENABLED=false
+RECEIPT_UPLOAD_DIR=uploads/receipts
+MAX_RECEIPT_UPLOAD_MB=10
+```
+
+Receipt uploads are disabled until `RECEIPT_UPLOAD_ENABLED=true` is set. For
+Docker, prefer `RECEIPT_UPLOAD_DIR=/app/data/uploads/receipts` so uploaded files
+live in the persistent app volume and are not served as static public files.
+
+## Item Lookup
+
+```env
+ITEM_LOOKUP_ENABLED=false
+ITEM_LOOKUP_PROVIDER=mock
+ITEM_LOOKUP_CACHE_TTL_SECONDS=3600
+AMAZON_API_KEY=
+AMAZON_ASSOCIATE_TAG=
+WALMART_API_KEY=
+TARGET_API_KEY=
+```
+
+The mock provider is available for development and tests. Real retailer
+providers should remain disabled until official API credentials and provider
+implementations are configured.
+
+## Discord
+
+```env
+APP_BASE_URL=https://app.example.com
+DISCORD_ENABLED=false
+DISCORD_BOT_TOKEN=
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_PUBLIC_KEY=
+DISCORD_GUILD_ID=
+```
+
+Set `DISCORD_ENABLED=true` only when the public key and bot credentials are
+configured. Configure Discord interactions to call `/api/discord/interactions`
+on the public app URL. `DISCORD_GUILD_ID` is optional and useful for development
+command registration.

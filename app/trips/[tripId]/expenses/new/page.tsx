@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { ItemLookupBox } from "@/components/item-lookup/ItemLookupBox";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { createExpense } from "@/lib/actions";
@@ -43,6 +44,7 @@ export default async function NewExpensePage({ params }: { params: Promise<{ tri
       />
       <section className="card mx-auto max-w-2xl p-5">
         <form className="grid gap-4" action={action} data-testid="expense-form">
+          <ItemLookupBox />
           <div>
             <label className="label" htmlFor="title">
               Title

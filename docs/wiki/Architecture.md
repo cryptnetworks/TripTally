@@ -29,6 +29,12 @@ Main entities:
 - `Participant`
 - `Expense`
 - `ExpenseShare`
+- `PaymentMethod`
+- `Receipt`
+- `ReceiptLineItem`
+- `RetailerLookupCache`
+- `DiscordAccount`
+- `DiscordLinkToken`
 - `PasswordResetToken`
 - `EmailVerificationToken`
 - `TwoFactorChallenge`
@@ -49,6 +55,9 @@ Main entities:
 - `lib/auth.ts` - NextAuth options and credential flow
 - `lib/trip-access.ts` - trip membership lookup and manager enforcement
 - `lib/trip-permissions.ts` - pure permission and expense status rules
+- `lib/receipts` - local receipt storage, parsing, and itemized split helpers
+- `lib/item-lookup` - retailer lookup provider abstraction and cache-backed service
+- `lib/discord` - Discord request verification and account linking helpers
 - `lib/validation.ts` - Zod schemas and form helpers
 - `lib/calculations.ts` - expense/balance calculations
 
@@ -66,3 +75,20 @@ included in balances. Settled expenses are locked from normal edits and deletes.
 
 Trip, participant, and expense changes write trip-scoped audit log rows with
 before/after JSON where practical.
+
+## Expansion Services
+
+Payment methods store only provider labels, handles, links, visibility, and
+notes. They are shown only inside authenticated trip settlement views.
+
+Receipts are stored on the local filesystem, not in public assets. Database rows
+track file metadata, parser output, raw extracted text, normalized totals, and
+line items. File download routes enforce trip membership.
+
+Retail item lookup is provider-based. The mock provider supports development and
+tests; real retailers should be added only through official or affiliate APIs.
+Lookup results are cached in `RetailerLookupCache`.
+
+Discord uses the HTTP interactions model. The app verifies Discord signatures,
+supports private `/link` account linking, and handles basic trip commands for
+linked users.

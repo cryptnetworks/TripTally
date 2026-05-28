@@ -89,3 +89,33 @@
 - Fix applied: Added `TripMember`, participant user links, expense ownership/status fields, trip-scoped audit metadata, server-side permission helpers, collaborative expense filters, activity feed, and tests for permission/status behavior.
 - Verification commands: `npx prisma validate`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 - Status: In progress on `feature/collaborative-purchases-permissions`.
+
+## Issue 10: Payments, receipts, lookup, and Discord expansion
+
+- Date encountered: 2026-05-28
+- Error summary: The app needed settlement payment links, receipt upload/parsing, retailer-assisted item entry, and Discord account linking/commands.
+- Root cause: The collaborative ledger existed, but settlement convenience, receipt evidence, item entry assistance, and chat integration had no persistent models or service boundaries.
+- Files changed: Prisma schema and migration, account/trip/receipt pages, receipt/download and lookup/Discord API routes, payment/receipt/item lookup/Discord services, Docker Compose, environment examples, tests, and documentation.
+- Fix applied: Added external payment methods, local receipt storage and parser review, itemized receipt split helpers, server-side item lookup with mock provider and cache, Discord signed interactions and linking tokens, and docs for configuration/security.
+- Verification commands: `npx prisma validate`, `npx prisma migrate deploy`, `npm run format:check`, `npm run typecheck`, `npm test`.
+- Status: In progress locally on `feature/local-major-expansion`; not pushed.
+
+## Issue 11: CodeQL workflow and token digest findings plus picomatch Trivy finding
+
+- Date encountered: 2026-05-28
+- Error summary: CodeQL reported missing workflow permissions in CI and continued to flag one-time token HMAC digests as insufficient password hashing. Trivy also reported vulnerable `picomatch@4.0.3`.
+- Root cause: The CI workflow did not declare explicit least-privilege permissions. CodeQL treats password reset/OAuth/Discord one-time token digest flows like user password hashing even though the tokens are high-entropy random lookup secrets keyed with HMAC-SHA-256. Trivy was interpreting the unresolved package range as vulnerable despite the installed tree resolving patched versions.
+- Files changed: `.github/workflows/ci.yml`, `lib/token-digest.ts`, `package.json`, `package-lock.json`, and this log.
+- Fix applied: Added `permissions: contents: read` to CI, documented the CodeQL false positive at the HMAC line with a query-specific suppression, and added direct `picomatch@4.0.4` so the installed root package is explicitly patched.
+- Verification commands: `npm ls picomatch --all`, `npm run security:audit`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`.
+- Status: Fixed locally; not pushed.
+
+## Issue 12: PR readiness hardening for expansion branch
+
+- Date encountered: 2026-05-28
+- Error summary: Local PR review of `484b5cd` found hardening gaps around receipt path containment, receipt edit authorization, Discord replay resistance, unsafe legacy payment URLs, and default exposure of new receipt/Discord surfaces.
+- Root cause: The feature branch added the initial service boundaries and UI, but some new edges needed production safety checks before review.
+- Files changed: `lib/receipts/storage.ts`, `app/api/receipts/[receiptId]/file/route.ts`, `lib/actions/receipts.ts`, receipt pages, Discord security/interaction route, settlement UI, config/env docs, `.gitignore`, and focused tests.
+- Fix applied: Constrained receipt reads/writes to the configured upload directory, restricted receipt review/attachment to uploaders or managers, added Discord signature timestamp freshness checks, suppressed unsafe persisted payment URLs at render time, and gated receipt uploads plus Discord interactions behind explicit feature flags.
+- Verification commands: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run security:audit`.
+- Status: Fixed locally; not pushed.

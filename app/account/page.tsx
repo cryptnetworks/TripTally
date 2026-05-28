@@ -3,8 +3,12 @@ import { PageShell } from "@/components/PageShell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
+  deletePaymentMethod,
+  linkDiscordAccount,
+  savePaymentMethod,
   setTwoFactorMethod,
   startAuthenticatorSetup,
+  unlinkDiscordAccount,
   unlinkAuthProvider,
   updateAccountPassword,
   updateAccountProfile,
@@ -13,6 +17,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { enabledLoginProviders } from "@/lib/oauth-providers";
+import { paymentProviderLabel, paymentProviders } from "@/lib/payments";
 
 function profileMessage(status?: string) {
   if (status === "updated") return "Account details updated.";
@@ -37,6 +42,20 @@ function twoFactorMessage(status?: string) {
   return "";
 }
 
+function paymentMessage(status?: string) {
+  if (status === "updated") return "Payment method saved.";
+  if (status === "deleted") return "Payment method removed.";
+  if (status === "invalid") return "Check the payment method details and try again.";
+  return "";
+}
+
+function discordMessage(status?: string) {
+  if (status === "linked") return "Discord account linked.";
+  if (status === "unlinked") return "Discord account unlinked.";
+  if (status === "invalid") return "That Discord link expired or was already used.";
+  return "";
+}
+
 export default async function AccountPage({
   searchParams
 }: {
@@ -46,6 +65,9 @@ export default async function AccountPage({
     twoFactor?: string;
     authenticatorSecret?: string;
     authenticatorUri?: string;
+    payment?: string;
+    discord?: string;
+    discordLinkToken?: string;
   }>;
 }) {
   const sessionUser = await requireUser();
@@ -59,6 +81,8 @@ export default async function AccountPage({
       twoFactorMethod: true,
       authenticatorEnabled: true,
       authAccounts: true,
+      paymentMethods: { orderBy: { createdAt: "asc" } },
+      discordAccount: true,
       createdAt: true
     }
   });
@@ -66,6 +90,8 @@ export default async function AccountPage({
   const profileStatus = profileMessage(query.profile);
   const passwordStatus = passwordMessage(query.password);
   const twoFactorStatus = twoFactorMessage(query.twoFactor);
+  const paymentStatus = paymentMessage(query.payment);
+  const discordStatus = discordMessage(query.discord);
 
   return (
     <PageShell>
@@ -156,6 +182,114 @@ export default async function AccountPage({
             </div>
           </section>
         </aside>
+
+        <section className="card p-5 lg:col-span-2">
+          <h2 className="text-xl font-semibold text-ink">Settlement payment methods</h2>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Add external payment links or handles for trip members. TripTally never processes
+            payments or stores payment credentials.
+          </p>
+          {paymentStatus ? (
+            <p
+              className={
+                query.payment === "invalid"
+                  ? "mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral"
+                  : "mt-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean"
+              }
+            >
+              {paymentStatus}
+            </p>
+          ) : null}
+          <form className="mt-5 grid gap-3 md:grid-cols-2" action={savePaymentMethod}>
+            <div>
+              <label className="label" htmlFor="payment-provider">
+                Provider
+              </label>
+              <select className="field" id="payment-provider" name="provider" required>
+                {paymentProviders.map((provider) => (
+                  <option key={provider} value={provider}>
+                    {paymentProviderLabel(provider)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="payment-label">
+                Label
+              </label>
+              <input className="field" id="payment-label" name="label" maxLength={80} />
+            </div>
+            <div>
+              <label className="label" htmlFor="payment-handle">
+                Handle or email
+              </label>
+              <input className="field" id="payment-handle" name="handle" maxLength={120} />
+            </div>
+            <div>
+              <label className="label" htmlFor="payment-url">
+                Payment link
+              </label>
+              <input className="field" id="payment-url" name="url" type="url" maxLength={500} />
+            </div>
+            <div>
+              <label className="label" htmlFor="payment-visibility">
+                Visibility
+              </label>
+              <select
+                className="field"
+                id="payment-visibility"
+                name="visibility"
+                defaultValue="trip_members"
+              >
+                <option value="trip_members">Trip members</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+            <label className="mt-6 flex min-h-11 items-center gap-3 rounded-lg border border-line bg-surface px-3 py-3 text-sm">
+              <input name="enabled" type="checkbox" value="on" defaultChecked />
+              Enabled
+            </label>
+            <div className="md:col-span-2">
+              <label className="label" htmlFor="payment-notes">
+                Notes
+              </label>
+              <textarea
+                className="field min-h-20"
+                id="payment-notes"
+                name="notes"
+                maxLength={240}
+              />
+            </div>
+            <button className="btn-primary md:col-span-2" type="submit">
+              Add payment method
+            </button>
+          </form>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {user.paymentMethods.map((method) => (
+              <div key={method.id} className="rounded-lg border border-line bg-surface p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-ink">
+                      {method.label || paymentProviderLabel(method.provider)}
+                    </p>
+                    <p className="text-sm text-muted">
+                      {method.handle || method.url || "No public handle"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {method.enabled ? "Enabled" : "Disabled"} - {method.visibility}
+                    </p>
+                  </div>
+                  <form action={deletePaymentMethod}>
+                    <input name="paymentMethodId" type="hidden" value={method.id} />
+                    <button className="btn-secondary" type="submit">
+                      Remove
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="card p-5 lg:col-span-2">
           <h2 className="text-xl font-semibold text-ink">Two-factor authentication</h2>
@@ -262,6 +396,54 @@ export default async function AccountPage({
                 </form>
               </div>
             ) : null}
+          </div>
+        </section>
+
+        <section className="card p-5 lg:col-span-2">
+          <h2 className="text-xl font-semibold text-ink">Discord account</h2>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Discord linking is used by slash commands and never relies on matching emails.
+          </p>
+          {discordStatus ? (
+            <p
+              className={
+                query.discord === "invalid"
+                  ? "mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral"
+                  : "mt-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean"
+              }
+            >
+              {discordStatus}
+            </p>
+          ) : null}
+          <div className="mt-4 rounded-lg border border-line bg-surface p-3">
+            {user.discordAccount ? (
+              <>
+                <p className="font-semibold text-ink">
+                  Linked to{" "}
+                  {user.discordAccount.discordUsername || user.discordAccount.discordUserId}
+                </p>
+                <p className="text-xs text-muted">
+                  Discord ID: {user.discordAccount.discordUserId}
+                </p>
+                <form className="mt-3" action={unlinkDiscordAccount}>
+                  <button className="btn-secondary" type="submit">
+                    Unlink Discord
+                  </button>
+                </form>
+              </>
+            ) : query.discordLinkToken ? (
+              <form action={linkDiscordAccount}>
+                <input name="discordLinkToken" type="hidden" value={query.discordLinkToken} />
+                <p className="text-sm text-muted">Confirm linking this Discord account.</p>
+                <button className="btn-primary mt-3" type="submit">
+                  Link Discord account
+                </button>
+              </form>
+            ) : (
+              <p className="text-sm text-muted">
+                Run `/link` in Discord, then open the private link while signed in here.
+              </p>
+            )}
           </div>
         </section>
 

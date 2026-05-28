@@ -8,6 +8,10 @@ participants, balances, and settlement suggestions.
 - Trip, participant, expense, balance, and settlement tracking
 - Collaborative trip memberships with owner/admin/member/viewer permissions
 - Member-created expenses with draft, submitted, disputed, approved, and settled states
+- External payment profile links for settlement convenience
+- Local receipt upload with parser review and itemized line item storage
+- Server-side retail item lookup abstraction with mock/development provider
+- Discord account linking and slash-command interaction endpoint
 - Credentials login with email verification and password reset
 - Email-code or authenticator-app MFA
 - Admin portal for users, auth providers, settings, and audit logs
@@ -51,6 +55,11 @@ NEXTAUTH_SECRET=paste-generated-secret-here
 TOKEN_DIGEST_SECRET=paste-generated-secret-here
 AUTH_CONFIG_ENCRYPTION_KEY=paste-generated-secret-here
 SMTP_ENABLED=false
+RECEIPT_UPLOAD_ENABLED=false
+RECEIPT_UPLOAD_DIR=uploads/receipts
+MAX_RECEIPT_UPLOAD_MB=10
+ITEM_LOOKUP_ENABLED=false
+ITEM_LOOKUP_PROVIDER=mock
 ```
 
 For a public deployment, use the public HTTPS URL everywhere:
@@ -235,6 +244,45 @@ for implicit TLS ports such as `465`.
 Two-factor authentication can be disabled, set to email codes, or set to
 authenticator-app TOTP from the account settings page.
 
+## Payments, Receipts, Lookup, And Discord
+
+Payment methods are external links or handles only. TripTally does not process
+payments, store payment credentials, or call payment provider APIs. Settlement
+cards show enabled trip-member-visible payment methods for the person receiving
+money.
+
+Receipt uploads are off by default and should be enabled explicitly with
+`RECEIPT_UPLOAD_ENABLED=true` after `RECEIPT_UPLOAD_DIR` points at a persistent,
+non-public filesystem path. Use a Docker-mounted path such as
+`/app/data/uploads/receipts` in production. Allowed uploads are PDF, JPEG, PNG,
+HEIC, and HEIF up to `MAX_RECEIPT_UPLOAD_MB`. Receipt files are served only
+through authenticated download routes that check trip membership and keep file
+paths inside the configured upload directory.
+
+Receipt parsing uses a local heuristic parser by default. It extracts obvious
+receipt text from text-like PDFs, attempts merchant/date/subtotal/tax/tip/total
+matching, stores raw extracted text, and leaves low-confidence or image-only
+receipts available for manual correction.
+
+Retail item lookup is disabled by default. The `mock` provider is available for
+development and tests. Real retailer providers are intentionally disabled until
+official or affiliate API credentials and provider implementations are added.
+
+Discord integration is off by default. Set `DISCORD_ENABLED=true` before
+exposing the HTTP interactions endpoint at `/api/discord/interactions`.
+Configure Discord to use that public endpoint, set `DISCORD_PUBLIC_KEY`, and run
+the command registration helper when bot credentials are available:
+
+```bash
+npm run discord:register
+```
+
+With Docker Compose, use the optional `discord` profile to register commands:
+
+```bash
+docker compose --profile discord run --rm discord-commands
+```
+
 ## Admin And OAuth Providers
 
 The first registered user becomes the bootstrap administrator. Admin pages are
@@ -380,5 +428,10 @@ The startup entrypoint applies database migrations automatically.
 - State-changing requests include same-origin CSRF checks.
 - OAuth app-login handoff tokens are short-lived, single-use, and stored in an
   HTTP-only cookie.
+- Receipt files are stored outside the public asset tree and require trip
+  membership for download.
+- Payment methods store only external handles or links, never credentials.
+- Retail lookup provider calls run server-side and must not expose API keys to
+  the browser.
 - Security headers are configured in `next.config.mjs`.
 - Report vulnerabilities privately. See `SECURITY.md`.

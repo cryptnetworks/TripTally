@@ -72,6 +72,19 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  discord-commands:
+    image: triptally:latest
+    profiles:
+      - discord
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+    command: npm run discord:register
+    depends_on:
+      triptally:
+        condition: service_healthy
+
 volumes:
   triptally_data:
   certbot_etc:

@@ -9,6 +9,7 @@ import { PageShell } from "@/components/PageShell";
 import { SettlementList } from "@/components/SettlementList";
 import { calculateBalances } from "@/lib/calculations";
 import { createParticipant, deleteParticipant, deleteTrip } from "@/lib/actions";
+import { getAppConfig } from "@/lib/config";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
@@ -36,10 +37,23 @@ export default async function TripDetailPage({
   const role = resolved.access.role;
   const canManageTrip = isTripManager(role);
   const canAddExpense = canCreateTripExpense(role);
+  const receiptsEnabled = getAppConfig().receiptUploadEnabled;
   const trip = await prisma.trip.findFirst({
     where: { id: tripId },
     include: {
-      participants: { orderBy: { createdAt: "asc" }, include: { user: true } },
+      participants: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          user: {
+            include: {
+              paymentMethods: {
+                where: { enabled: true, visibility: "trip_members" },
+                orderBy: { createdAt: "asc" }
+              }
+            }
+          }
+        }
+      },
       expenses: {
         orderBy: { date: "desc" },
         include: {
@@ -74,6 +88,18 @@ export default async function TripDetailPage({
     settlements: settlements.length
   });
   const totalCost = balanceExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const paymentMethodsByParticipantId = Object.fromEntries(
+    trip.participants.map((participant) => [
+      participant.id,
+      (participant.user?.paymentMethods || []).map((method) => ({
+        provider: method.provider,
+        label: method.label,
+        handle: method.handle,
+        url: method.url,
+        notes: method.notes
+      }))
+    ])
+  );
   const addParticipant = createParticipant.bind(null, trip.id);
   const removeTrip = deleteTrip.bind(null, trip.id);
   const filters = [
@@ -100,6 +126,11 @@ export default async function TripDetailPage({
             href={`/trips/${trip.id}/expenses/new`}
           >
             Add Expense
+          </Link>
+        ) : null}
+        {canAddExpense && receiptsEnabled ? (
+          <Link className="btn-secondary" href={`/trips/${trip.id}/receipts/new`}>
+            Upload Receipt
           </Link>
         ) : null}
         {canManageTrip ? (
@@ -283,7 +314,10 @@ export default async function TripDetailPage({
           </section>
           <section className="card p-4">
             <h2 className="mb-4 text-lg font-semibold text-ink">Settlement suggestions</h2>
-            <SettlementList settlements={settlements} />
+            <SettlementList
+              settlements={settlements}
+              paymentMethodsByParticipantId={paymentMethodsByParticipantId}
+            />
           </section>
           <section className="card p-4">
             <h2 className="mb-4 text-lg font-semibold text-ink">Trip activity</h2>
