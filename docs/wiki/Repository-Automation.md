@@ -30,9 +30,10 @@ The repository README and wiki currently pin the published image by digest for r
 The security workflow runs:
 
 - `npm run security:audit` for high and critical npm advisories.
-- CodeQL analysis.
 - Trivy filesystem scan.
 - Trivy Docker image scan.
+
+CodeQL is expected to run through GitHub default setup in repository settings. The repo does not define an advanced CodeQL workflow because GitHub rejects advanced CodeQL SARIF uploads while default setup is enabled.
 
 Moderate npm advisories are reviewed but do not currently fail the high-threshold audit command. Do not run `npm audit fix --force` without reviewing breaking changes.
 

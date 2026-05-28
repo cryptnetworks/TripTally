@@ -51,6 +51,7 @@ Automated coverage includes:
 - Unit tests that verify security headers remain configured.
 - Unit tests that verify user-controlled text is escaped by React rendering.
 - API/session tests for stale sessions, disabled users, MFA, CSRF, and role checks.
-- GitHub Actions security workflow for high-severity npm audit, CodeQL, Trivy filesystem scan, and Trivy Docker image scan.
+- GitHub Actions security workflow for high-severity npm audit, Trivy filesystem scan, and Trivy Docker image scan.
+- CodeQL is expected to run through GitHub default setup in repository settings.
 
 `npm run security:audit` currently fails only high or critical npm advisories. Moderate advisories are reviewed separately because some upstream fixes require breaking changes.

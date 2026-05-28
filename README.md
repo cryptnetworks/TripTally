@@ -284,7 +284,7 @@ Playwright forces local `NEXTAUTH_URL` and `PUBLIC_APP_URL` values when it start
 
 GitHub Actions provide CI, Docker image publishing, dependency review, security scanning, and release creation. Dependabot checks npm packages, GitHub Actions, and Docker base images weekly.
 
-The security workflow runs high-severity npm audit, CodeQL, Trivy filesystem scanning, and Trivy Docker image scanning. Moderate npm advisories are reviewed separately when upstream fixes require breaking changes.
+The security workflow runs high-severity npm audit, Trivy filesystem scanning, and Trivy Docker image scanning. CodeQL is expected to run through GitHub default setup in repository settings. Moderate npm advisories are reviewed separately when upstream fixes require breaking changes.
 
 ## Backups
 

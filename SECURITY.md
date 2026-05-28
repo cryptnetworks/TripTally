@@ -36,6 +36,6 @@ Maintainers will acknowledge valid reports, investigate, and coordinate a fix be
 
 ## Automated Security Checks
 
-The repository security workflow runs high-severity npm audit, CodeQL, Trivy filesystem scanning, and Trivy Docker image scanning.
+The repository security workflow runs high-severity npm audit, Trivy filesystem scanning, and Trivy Docker image scanning. CodeQL is expected to run through GitHub default setup in repository settings.
 
 `npm run security:audit` is configured to fail on high and critical advisories. Moderate advisories are reviewed separately when available fixes require breaking package changes.
