@@ -251,7 +251,9 @@ Provider client secrets are encrypted with `AUTH_CONFIG_ENCRYPTION_KEY`.
 
 ## Local Development
 
-Use Node.js 22.
+Use Node.js 22. The Docker image remains pinned to the Node 22 Alpine LTS line
+until Node 26 leaves Current status and the Next.js/Prisma/native-module stack
+has clean support for it.
 
 ```bash
 npm install
@@ -292,6 +294,9 @@ GitHub Actions provide CI, Docker image publishing, dependency review, security 
 The security workflow runs high-severity npm audit, Trivy filesystem scanning, and Trivy Docker image scanning. CodeQL is expected to run through GitHub default setup in repository settings.
 
 Current dependency remediation replaces Nodemailer with EmailJS for direct SMTP sending and uses scoped npm overrides for vulnerable transitive packages that upstream dependencies have not yet bumped.
+Major ESLint and Docker Node runtime updates are intentionally deferred until
+their peer dependency/runtime support is clean; minor and patch dependency
+updates remain grouped for routine review.
 
 ## Backups
 
