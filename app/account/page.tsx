@@ -5,12 +5,14 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   setTwoFactorMethod,
   startAuthenticatorSetup,
+  unlinkAuthProvider,
   updateAccountPassword,
   updateAccountProfile,
   verifyAuthenticatorSetup
 } from "@/lib/actions";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { enabledLoginProviders } from "@/lib/oauth-providers";
 
 function profileMessage(status?: string) {
   if (status === "updated") return "Account details updated.";
@@ -56,9 +58,11 @@ export default async function AccountPage({
       emailVerifiedAt: true,
       twoFactorMethod: true,
       authenticatorEnabled: true,
+      authAccounts: true,
       createdAt: true
     }
   });
+  const loginProviders = await enabledLoginProviders();
   const profileStatus = profileMessage(query.profile);
   const passwordStatus = passwordMessage(query.password);
   const twoFactorStatus = twoFactorMessage(query.twoFactor);
@@ -258,6 +262,43 @@ export default async function AccountPage({
                 </form>
               </div>
             ) : null}
+          </div>
+        </section>
+
+        <section className="card p-5 lg:col-span-2">
+          <h2 className="text-xl font-semibold text-ink">Linked sign-in providers</h2>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Link OAuth providers for SSO login. You cannot remove your final login method.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {user.authAccounts.map((account) => (
+              <div
+                key={account.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface p-3"
+              >
+                <div>
+                  <p className="font-semibold text-ink">{account.providerId}</p>
+                  <p className="text-xs text-muted">{account.email || account.providerAccountId}</p>
+                </div>
+                <form action={unlinkAuthProvider}>
+                  <input name="providerId" type="hidden" value={account.providerId} />
+                  <button className="btn-secondary" type="submit">
+                    Unlink
+                  </button>
+                </form>
+              </div>
+            ))}
+            {loginProviders.map((provider) =>
+              user.authAccounts.some((account) => account.providerId === provider.id) ? null : (
+                <a
+                  key={provider.id}
+                  className="btn-secondary"
+                  href={`/api/auth/oauth/${provider.id}/start`}
+                >
+                  Link {provider.name}
+                </a>
+              )
+            )}
           </div>
         </section>
 

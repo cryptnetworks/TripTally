@@ -2,8 +2,10 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import * as bcrypt from "bcryptjs";
 import { logger } from "@/lib/logger";
+import { consumeOAuthLoginToken } from "@/lib/oauth-login";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getAuthSettings } from "@/lib/settings";
 import {
   startEmailTwoFactorChallenge,
   verifyAuthenticatorCode,
@@ -63,13 +65,15 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        twoFactorCode: { label: "Verification code", type: "text" }
+        twoFactorCode: { label: "Verification code", type: "text" },
+        oauthLoginToken: { label: "OAuth login token", type: "text" }
       },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse({
           email: credentials?.email,
           password: credentials?.password,
-          twoFactorCode: credentials?.twoFactorCode
+          twoFactorCode: credentials?.twoFactorCode,
+          oauthLoginToken: credentials?.oauthLoginToken
         });
 
         if (!parsed.success) {
@@ -77,7 +81,37 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const { email, password, twoFactorCode } = parsed.data;
+        const { email, password, twoFactorCode, oauthLoginToken } = parsed.data;
+
+        if (oauthLoginToken) {
+          const oauthUser = await consumeOAuthLoginToken(oauthLoginToken);
+          if (!oauthUser || oauthUser.disabledAt) {
+            logger.warn("auth.oauth_login_token.invalid");
+            return null;
+          }
+
+          await prisma.user.update({
+            where: { id: oauthUser.id },
+            data: { lastLoginAt: new Date() }
+          });
+
+          logger.info("auth.oauth_login.success", { userId: oauthUser.id });
+          return {
+            id: oauthUser.id,
+            name: oauthUser.username,
+            email: oauthUser.email
+          };
+        }
+
+        if (!password) {
+          return null;
+        }
+
+        const settings = await getAuthSettings();
+        if (!settings.localAuthEnabled) {
+          logger.warn("auth.login.local_disabled", { email });
+          return null;
+        }
         const rateLimit = checkRateLimit(`login:${email}`, {
           limit: 8,
           windowMs: 15 * 60 * 1000
@@ -90,6 +124,11 @@ export const authOptions: NextAuthOptions = {
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           logger.warn("auth.login.unknown_user", { email });
+          return null;
+        }
+
+        if (user.disabledAt) {
+          logger.warn("auth.login.disabled_user", { email, userId: user.id });
           return null;
         }
 
@@ -134,6 +173,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         logger.info("auth.login.success", { email, userId: user.id });
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() }
+        });
         return {
           id: user.id,
           name: user.username,

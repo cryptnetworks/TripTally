@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LoginForm } from "@/components/AuthForm";
 import { BrandLogo } from "@/components/BrandLogo";
+import { OAuthButtons } from "@/components/OAuthButtons";
 
 export default async function LoginPage({
   searchParams
@@ -12,6 +13,8 @@ export default async function LoginPage({
     verify?: string;
     verified?: string;
     verificationSent?: string;
+    oauth?: string;
+    oauthToken?: string;
   }>;
 }) {
   const query = await searchParams;
@@ -56,9 +59,15 @@ export default async function LoginPage({
             You have been logged out.
           </p>
         ) : null}
+        {query.oauth ? (
+          <p className="mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral">
+            OAuth sign-in failed: {query.oauth}.
+          </p>
+        ) : null}
         <div className="mt-6">
           <LoginForm />
         </div>
+        <OAuthButtons />
         <p className="mt-4 text-center text-sm">
           <Link className="font-semibold text-ocean" href="/forgot-password">
             Forgot password?

@@ -58,6 +58,7 @@ const nodeEnv = stripQuotes(process.env.NODE_ENV || "development");
 const databaseUrl = stripQuotes(process.env.DATABASE_URL || "");
 const nextAuthUrl = stripQuotes(process.env.NEXTAUTH_URL || "");
 const nextAuthSecret = stripQuotes(process.env.NEXTAUTH_SECRET || "");
+const authConfigEncryptionKey = stripQuotes(process.env.AUTH_CONFIG_ENCRYPTION_KEY || "");
 const smtpEnabled = stripQuotes(process.env.SMTP_ENABLED || "false") === "true";
 const smtpPort = Number(stripQuotes(process.env.SMTP_PORT || "587"));
 const smtpSecure = stripQuotes(process.env.SMTP_SECURE || "false") === "true";
@@ -94,6 +95,13 @@ if (
   process.env.TRIPTALLY_ALLOW_INSECURE_SECRET !== "1"
 ) {
   fail("NEXTAUTH_SECRET must be set to a real random value.");
+}
+
+if (
+  nodeEnv === "production" &&
+  (!authConfigEncryptionKey || placeholderSecrets.has(authConfigEncryptionKey))
+) {
+  fail("AUTH_CONFIG_ENCRYPTION_KEY must be set to a real random value in production.");
 }
 
 if (

@@ -34,11 +34,18 @@ export const registerSchema = z
 
 export const loginSchema = z.object({
   email: z.email().trim().toLowerCase().max(120),
-  password: z.string().min(1).max(128),
+  password: z.string().max(128).optional(),
   twoFactorCode: z
     .string()
     .trim()
     .max(12)
+    .optional()
+    .or(z.literal(""))
+    .transform((value) => value || undefined),
+  oauthLoginToken: z
+    .string()
+    .trim()
+    .max(256)
     .optional()
     .or(z.literal(""))
     .transform((value) => value || undefined)

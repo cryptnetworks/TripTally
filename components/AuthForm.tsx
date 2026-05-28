@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resendVerificationEmail } from "@/lib/actions";
@@ -12,6 +12,33 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [requiresCode, setRequiresCode] = useState<"email" | "authenticator" | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const oauthToken = searchParams.get("oauthToken");
+
+  useEffect(() => {
+    if (!oauthToken) return;
+
+    let cancelled = false;
+    async function finishOAuthLogin() {
+      const result = await signIn("credentials", {
+        email: "oauth@example.com",
+        oauthLoginToken: oauthToken,
+        redirect: false
+      });
+
+      if (cancelled) return;
+      if (result?.error) {
+        setError("OAuth sign-in could not be completed.");
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    }
+
+    void finishOAuthLogin();
+    return () => {
+      cancelled = true;
+    };
+  }, [oauthToken, router]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

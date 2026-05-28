@@ -1,0 +1,193 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import * as bcrypt from "bcryptjs";
+import { writeAuditLog } from "@/lib/audit";
+import { countActiveAdmins, requireAdminAction } from "@/lib/authorization";
+import { encryptProviderSecret, oauthProviderDefinitions } from "@/lib/oauth-providers";
+import { prisma } from "@/lib/prisma";
+import { setAuthSettings } from "@/lib/settings";
+import { formString } from "@/lib/validation";
+
+function checked(formData: FormData, key: string) {
+  return formData.get(key) === "on";
+}
+
+export async function updateUserRole(formData: FormData) {
+  const actor = await requireAdminAction();
+  const userId = formString(formData, "userId");
+  const role = formString(formData, "role");
+
+  if (!["admin", "user", "readonly"].includes(role)) {
+    redirect("/admin/users?error=invalid-role");
+  }
+
+  const target = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  if (target.id === actor.id && target.role === "admin" && role !== "admin") {
+    redirect("/admin/users?error=self-lockout");
+  }
+  if (target.role === "admin" && role !== "admin" && (await countActiveAdmins(target.id)) === 0) {
+    redirect("/admin/users?error=final-admin");
+  }
+
+  await prisma.user.update({ where: { id: userId }, data: { role } });
+  await writeAuditLog({
+    actorUserId: actor.id,
+    action: "user.role_changed",
+    targetType: "user",
+    targetId: userId,
+    metadata: { from: target.role, to: role }
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function setUserDisabled(formData: FormData) {
+  const actor = await requireAdminAction();
+  const userId = formString(formData, "userId");
+  const disabled = formString(formData, "disabled") === "true";
+  const target = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+  if (target.id === actor.id && disabled) {
+    redirect("/admin/users?error=self-lockout");
+  }
+  if (target.role === "admin" && disabled && (await countActiveAdmins(target.id)) === 0) {
+    redirect("/admin/users?error=final-admin");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { disabledAt: disabled ? new Date() : null }
+  });
+  await writeAuditLog({
+    actorUserId: actor.id,
+    action: disabled ? "user.disabled" : "user.enabled",
+    targetType: "user",
+    targetId: userId
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function deleteUser(formData: FormData) {
+  const actor = await requireAdminAction();
+  const userId = formString(formData, "userId");
+  const target = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+  if (target.id === actor.id) {
+    redirect("/admin/users?error=self-lockout");
+  }
+  if (target.role === "admin" && (await countActiveAdmins(target.id)) === 0) {
+    redirect("/admin/users?error=final-admin");
+  }
+
+  await prisma.user.delete({ where: { id: userId } });
+  await writeAuditLog({
+    actorUserId: actor.id,
+    action: "user.deleted",
+    targetType: "user",
+    targetId: userId,
+    metadata: { email: target.email }
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function resetUserPassword(formData: FormData) {
+  const actor = await requireAdminAction();
+  const userId = formString(formData, "userId");
+  const password = formString(formData, "password");
+
+  if (password.length < 8 || password.length > 128) {
+    redirect("/admin/users?error=password");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: await bcrypt.hash(password, 12) }
+  });
+  await writeAuditLog({
+    actorUserId: actor.id,
+    action: "user.password_reset_by_admin",
+    targetType: "user",
+    targetId: userId
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function updateAuthProviderConfig(formData: FormData) {
+  const actor = await requireAdminAction();
+  const providerId = formString(formData, "providerId");
+  const provider = oauthProviderDefinitions.find((item) => item.id === providerId);
+  if (!provider) redirect("/admin/auth?error=provider");
+
+  const clientSecret = formString(formData, "clientSecret");
+  const clearSecret = checked(formData, "clearSecret");
+  const scopes = formString(formData, "scopes")
+    .split(/[,\s]+/)
+    .map((scope) => scope.trim())
+    .filter(Boolean);
+
+  await prisma.authProviderConfig.upsert({
+    where: { id: provider.id },
+    create: {
+      id: provider.id,
+      name: provider.name,
+      enabled: checked(formData, "enabled"),
+      clientId: formString(formData, "clientId") || null,
+      encryptedClientSecret: clientSecret ? encryptProviderSecret(clientSecret) : null,
+      scopesJson: JSON.stringify(scopes.length ? scopes : provider.defaultScopes)
+    },
+    update: {
+      enabled: checked(formData, "enabled"),
+      clientId: formString(formData, "clientId") || null,
+      encryptedClientSecret: clearSecret
+        ? null
+        : clientSecret
+          ? encryptProviderSecret(clientSecret)
+          : undefined,
+      scopesJson: JSON.stringify(scopes.length ? scopes : provider.defaultScopes)
+    }
+  });
+
+  await writeAuditLog({
+    actorUserId: actor.id,
+    action: "auth.provider_config_changed",
+    targetType: "auth_provider",
+    targetId: provider.id,
+    metadata: {
+      enabled: checked(formData, "enabled"),
+      secretChanged: Boolean(clientSecret),
+      clearSecret
+    }
+  });
+  revalidatePath("/admin/auth");
+}
+
+export async function updateLocalAuthSettings(formData: FormData) {
+  const actor = await requireAdminAction();
+  const localAuthEnabled = checked(formData, "localAuthEnabled");
+  const enabledProviders = await prisma.authProviderConfig.count({
+    where: { enabled: true, clientId: { not: null }, encryptedClientSecret: { not: null } }
+  });
+
+  if (!localAuthEnabled && enabledProviders === 0) {
+    redirect("/admin/settings?error=lockout");
+  }
+
+  await setAuthSettings({
+    localAuthEnabled,
+    publicRegistrationEnabled: checked(formData, "publicRegistrationEnabled"),
+    requireEmailVerification: checked(formData, "requireEmailVerification"),
+    allowedEmailDomains: formString(formData, "allowedEmailDomains")
+      .split(",")
+      .map((domain) => domain.trim().toLowerCase())
+      .filter(Boolean),
+    defaultUserRole: formString(formData, "defaultUserRole") === "readonly" ? "readonly" : "user"
+  });
+
+  await writeAuditLog({
+    actorUserId: actor.id,
+    action: "auth.settings_changed",
+    targetType: "app_settings"
+  });
+  revalidatePath("/admin/settings");
+}

@@ -8,8 +8,17 @@ export {
   updateAccountPassword,
   updateAccountProfile,
   verifyAuthenticatorSetup,
-  verifyEmailAddress
+  verifyEmailAddress,
+  unlinkAuthProvider
 } from "@/lib/actions/auth";
+export {
+  deleteUser,
+  resetUserPassword,
+  setUserDisabled,
+  updateAuthProviderConfig,
+  updateLocalAuthSettings,
+  updateUserRole
+} from "@/lib/actions/admin";
 export { createTrip, deleteTrip, updateTrip } from "@/lib/actions/trips";
 export {
   createParticipant,

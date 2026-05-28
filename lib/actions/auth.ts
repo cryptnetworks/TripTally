@@ -7,6 +7,8 @@ import { createEmailVerificationForUser, verifyEmailToken } from "@/lib/email-ve
 import { completePasswordReset, createPasswordResetForUser } from "@/lib/password-reset";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { bootstrapRole } from "@/lib/roles";
+import { emailDomainAllowed, getAuthSettings } from "@/lib/settings";
 import {
   createAuthenticatorSetup,
   enableAuthenticator,
@@ -39,6 +41,16 @@ export async function registerUser(formData: FormData) {
   }
 
   const email = parsed.data.email;
+  const settings = await getAuthSettings();
+  if (!settings.publicRegistrationEnabled) {
+    logger.warn("auth.register.disabled");
+    redirect("/register?error=disabled");
+  }
+  if (!emailDomainAllowed(email, settings.allowedEmailDomains)) {
+    logger.warn("auth.register.email_domain_blocked", { email });
+    redirect("/register?error=domain");
+  }
+
   const rateLimit = checkRateLimit(`register:${email}`, {
     limit: 5,
     windowMs: 15 * 60 * 1000
@@ -59,18 +71,27 @@ export async function registerUser(formData: FormData) {
     redirect("/register?error=exists");
   }
 
-  const user = await prisma.user.create({
-    data: {
-      username: parsed.data.username,
-      email,
-      passwordHash: await bcrypt.hash(parsed.data.password, 12)
-    }
+  const user = await prisma.$transaction(async (tx) => {
+    const userCount = await tx.user.count();
+    return tx.user.create({
+      data: {
+        username: parsed.data.username,
+        email,
+        role: bootstrapRole(userCount, settings.defaultUserRole),
+        emailVerifiedAt: settings.requireEmailVerification ? null : new Date(),
+        passwordHash: await bcrypt.hash(parsed.data.password, 12)
+      }
+    });
   });
 
-  await createEmailVerificationForUser(user);
+  if (settings.requireEmailVerification) {
+    await createEmailVerificationForUser(user);
+  }
 
-  logger.info("auth.register.created", { email });
-  redirect("/login?registered=1&verify=1");
+  logger.info("auth.register.created", { email, role: user.role });
+  redirect(
+    settings.requireEmailVerification ? "/login?registered=1&verify=1" : "/login?registered=1"
+  );
 }
 
 export async function requestPasswordReset(formData: FormData) {
@@ -301,4 +322,25 @@ export async function verifyAuthenticatorSetup(formData: FormData) {
   redirect(
     success ? "/account?twoFactor=authenticator-enabled" : "/account?twoFactor=invalid-code"
   );
+}
+
+export async function unlinkAuthProvider(formData: FormData) {
+  const user = await requireUser();
+  const providerId = formString(formData, "providerId");
+  const dbUser = await prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    include: { authAccounts: true }
+  });
+
+  const hasLocalPassword = Boolean(dbUser.passwordHash);
+  if (!hasLocalPassword && dbUser.authAccounts.length <= 1) {
+    redirect("/account?link=final-method");
+  }
+
+  await prisma.userAuthAccount.delete({
+    where: { userId_providerId: { userId: user.id, providerId } }
+  });
+
+  logger.info("auth.account_unlinked", { userId: user.id, providerId });
+  redirect("/account?link=removed");
 }

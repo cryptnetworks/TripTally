@@ -4,9 +4,17 @@ import { AccountMenu } from "@/components/AccountMenu";
 import { BrandLogo } from "@/components/BrandLogo";
 import { MobileNav } from "@/components/MobileNav";
 import { authOptions } from "@/lib/auth";
+import { isAdminRole } from "@/lib/authorization";
+import { prisma } from "@/lib/prisma";
 
 export async function PageShell({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
+  const currentUser = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+      })
+    : null;
 
   return (
     <div className="min-h-screen bg-brand-page pb-24 md:pb-0">
@@ -26,6 +34,11 @@ export async function PageShell({ children }: { children: React.ReactNode }) {
             <Link className="btn-primary" href="/trips/new">
               New trip
             </Link>
+            {isAdminRole(currentUser?.role) ? (
+              <Link className="btn-secondary" href="/admin">
+                Admin
+              </Link>
+            ) : null}
             <AccountMenu name={session?.user?.name} email={session?.user?.email} />
           </nav>
         </div>
