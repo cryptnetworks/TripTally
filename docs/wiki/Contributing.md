@@ -2,7 +2,7 @@
 
 ## Local Development
 
-Use Node.js 22.
+Use Node.js 22. The production Dockerfile also uses the Node 22 Alpine LTS line.
 
 ```bash
 npm install

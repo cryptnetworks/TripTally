@@ -39,3 +39,9 @@ Maintainers will acknowledge valid reports, investigate, and coordinate a fix be
 The repository security workflow runs high-severity npm audit, Trivy filesystem scanning, and Trivy Docker image scanning. CodeQL is expected to run through GitHub default setup in repository settings.
 
 `npm run security:audit` is configured to fail on high and critical advisories. Current npm audit output is expected to be clean; vulnerable transitive dependencies are remediated with scoped npm overrides when upstream packages lag patched versions.
+
+Dependabot major updates are reviewed before adoption. ESLint 10 is deferred
+until the Next.js ESLint plugin chain advertises compatible peer ranges, and
+Node 26 Docker images are deferred while that release is Current rather than
+LTS for this stack. The app uses EmailJS for SMTP delivery and does not keep a
+direct Nodemailer dependency.

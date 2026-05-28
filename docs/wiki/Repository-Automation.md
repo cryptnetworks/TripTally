@@ -51,6 +51,13 @@ Dependabot checks:
 
 Minor and patch updates are grouped where practical. Security updates should be reviewed promptly and tested through CI before merge.
 
+Current major-version deferrals:
+
+- ESLint 10 is ignored until `eslint-config-next` and its bundled React/import/accessibility plugins publish compatible peer ranges.
+- Node 26 Docker image updates are ignored while Node 26 is a Current release. Production Docker images stay on Node 22 Alpine LTS until the runtime stack has clean support.
+
+TripTally sends SMTP mail through EmailJS. Do not reintroduce a direct Nodemailer dependency unless NextAuth and the app email layer are reviewed together for peer compatibility.
+
 ## Release Workflow
 
 Version tags matching `v*.*.*` create a GitHub release with generated notes. Docker image publishing is handled by the Docker workflow for tag pushes.
