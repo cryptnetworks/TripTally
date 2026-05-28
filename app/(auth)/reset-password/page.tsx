@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
 import { resetPassword } from "@/lib/actions";
 
 export default async function ResetPasswordPage({
@@ -10,10 +11,12 @@ export default async function ResetPasswordPage({
   const token = query.token || "";
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <section className="card w-full max-w-md p-6">
-        <p className="text-xs font-bold uppercase tracking-normal text-ocean">TripTally</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">Choose a new password</h1>
+    <main className="flex min-h-screen items-center justify-center bg-brand-page px-4 py-10">
+      <section className="auth-card w-full max-w-md p-6">
+        <div className="mb-6 flex justify-center">
+          <BrandLogo href="/" priority />
+        </div>
+        <h1 className="text-center text-3xl font-bold text-ink">Choose a new password</h1>
         <p className="mt-2 text-sm text-muted">
           Use at least 8 characters. Reset links can only be used once.
         </p>
