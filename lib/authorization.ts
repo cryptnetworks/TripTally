@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { assertSameOriginRequest } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
@@ -43,6 +44,7 @@ export async function requireAdmin() {
 }
 
 export async function requireAdminAction() {
+  await assertSameOriginRequest("admin.action");
   const user = await currentUserWithRole();
 
   if (user.disabledAt || !canAccessAdmin(user.role)) {

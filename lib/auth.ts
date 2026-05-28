@@ -1,7 +1,9 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import * as bcrypt from "bcryptjs";
+import { OAUTH_LOGIN_COOKIE, readCookieValue } from "@/lib/cookies";
 import { logger } from "@/lib/logger";
+import { consumeSessionLoginToken } from "@/lib/login-token";
 import { consumeOAuthLoginToken } from "@/lib/oauth-login";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -15,6 +17,18 @@ import { loginSchema } from "@/lib/validation";
 
 const useSecureCookies =
   process.env.NODE_ENV === "production" && process.env.NEXTAUTH_URL?.startsWith("https://");
+
+function logLoginDebug(fields: {
+  email?: string;
+  userId?: string;
+  userFound?: boolean;
+  passwordVerified?: boolean;
+  mfaRequired?: boolean;
+  stepFailed?: string;
+}) {
+  if (process.env.NODE_ENV !== "development") return;
+  logger.info("auth.login.debug", fields);
+}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -66,13 +80,15 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
         twoFactorCode: { label: "Verification code", type: "text" },
+        loginToken: { label: "Login token", type: "text" },
         oauthLoginToken: { label: "OAuth login token", type: "text" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = loginSchema.safeParse({
           email: credentials?.email,
           password: credentials?.password,
           twoFactorCode: credentials?.twoFactorCode,
+          loginToken: credentials?.loginToken,
           oauthLoginToken: credentials?.oauthLoginToken
         });
 
@@ -81,10 +97,42 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const { email, password, twoFactorCode, oauthLoginToken } = parsed.data;
+        const { email, password, twoFactorCode, loginToken, oauthLoginToken } = parsed.data;
+
+        if (loginToken) {
+          const loginUser = await consumeSessionLoginToken(loginToken);
+          if (!loginUser || loginUser.disabledAt) {
+            logger.warn("auth.login_token.invalid");
+            return null;
+          }
+
+          await prisma.user.update({
+            where: { id: loginUser.id },
+            data: { lastLoginAt: new Date() }
+          });
+
+          logger.info("auth.login_token.success", { userId: loginUser.id });
+          return {
+            id: loginUser.id,
+            name: loginUser.username,
+            email: loginUser.email
+          };
+        }
 
         if (oauthLoginToken) {
-          const oauthUser = await consumeOAuthLoginToken(oauthLoginToken);
+          const requestHeaders = request?.headers as
+            | Headers
+            | Record<string, string | undefined>
+            | undefined;
+          const cookieHeader =
+            requestHeaders instanceof Headers
+              ? requestHeaders.get("cookie")
+              : requestHeaders?.cookie;
+          const token =
+            oauthLoginToken === "cookie"
+              ? readCookieValue(cookieHeader, OAUTH_LOGIN_COOKIE)
+              : oauthLoginToken;
+          const oauthUser = token ? await consumeOAuthLoginToken(token) : null;
           if (!oauthUser || oauthUser.disabledAt) {
             logger.warn("auth.oauth_login_token.invalid");
             return null;
@@ -104,12 +152,14 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!password) {
+          logLoginDebug({ email, stepFailed: "missing_password" });
           return null;
         }
 
         const settings = await getAuthSettings();
         if (!settings.localAuthEnabled) {
           logger.warn("auth.login.local_disabled", { email });
+          logLoginDebug({ email, stepFailed: "local_auth_disabled" });
           return null;
         }
         const rateLimit = checkRateLimit(`login:${email}`, {
@@ -118,44 +168,67 @@ export const authOptions: NextAuthOptions = {
         });
         if (!rateLimit.allowed) {
           logger.warn("auth.login.rate_limited", { email });
+          logLoginDebug({ email, stepFailed: "rate_limited" });
           return null;
         }
 
         const user = await prisma.user.findUnique({ where: { email } });
+        logLoginDebug({ email, userFound: Boolean(user) });
         if (!user) {
           logger.warn("auth.login.unknown_user", { email });
+          logLoginDebug({ email, stepFailed: "unknown_user" });
           return null;
         }
 
         if (user.disabledAt) {
           logger.warn("auth.login.disabled_user", { email, userId: user.id });
+          logLoginDebug({ email, userId: user.id, stepFailed: "disabled_user" });
           return null;
         }
 
         const isValid = await bcrypt.compare(password, user.passwordHash);
+        logLoginDebug({ email, userId: user.id, passwordVerified: isValid });
         if (!isValid) {
           logger.warn("auth.login.invalid_password", { email, userId: user.id });
+          logLoginDebug({ email, userId: user.id, stepFailed: "invalid_password" });
           return null;
         }
 
         if (!user.emailVerifiedAt) {
           logger.warn("auth.login.email_unverified", { email, userId: user.id });
+          logLoginDebug({ email, userId: user.id, stepFailed: "email_unverified" });
           throw new Error("EMAIL_VERIFICATION_REQUIRED");
         }
 
         if (user.twoFactorMethod === "email") {
+          logLoginDebug({ email, userId: user.id, mfaRequired: true });
           if (!twoFactorCode) {
             await startEmailTwoFactorChallenge(user);
+            logLoginDebug({ email, userId: user.id, stepFailed: "email_mfa_required" });
             throw new Error("EMAIL_OTP_REQUIRED");
           }
 
           if (!(await verifyEmailTwoFactorCode(user.id, twoFactorCode))) {
-            return null;
+            logLoginDebug({ email, userId: user.id, stepFailed: "invalid_email_mfa_code" });
+            throw new Error("INVALID_MFA_CODE");
           }
         }
 
         if (user.twoFactorMethod === "authenticator") {
+          logLoginDebug({ email, userId: user.id, mfaRequired: true });
+          if (!user.authenticatorEnabled || !user.authenticatorSecretEncrypted) {
+            logger.error("auth.login.mfa_misconfigured", {
+              email,
+              userId: user.id,
+              method: user.twoFactorMethod,
+              authenticatorEnabled: user.authenticatorEnabled
+            });
+            logLoginDebug({ email, userId: user.id, stepFailed: "mfa_misconfigured" });
+            throw new Error("MFA_MISCONFIGURED");
+          }
+
           if (!twoFactorCode) {
+            logLoginDebug({ email, userId: user.id, stepFailed: "authenticator_mfa_required" });
             throw new Error("AUTHENTICATOR_OTP_REQUIRED");
           }
 
@@ -168,7 +241,8 @@ export const authOptions: NextAuthOptions = {
               twoFactorCode
             ))
           ) {
-            return null;
+            logLoginDebug({ email, userId: user.id, stepFailed: "invalid_authenticator_mfa_code" });
+            throw new Error("INVALID_MFA_CODE");
           }
         }
 

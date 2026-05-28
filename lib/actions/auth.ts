@@ -2,6 +2,7 @@
 
 import * as bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { assertSameOriginRequest } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
 import { createEmailVerificationForUser, verifyEmailToken } from "@/lib/email-verification";
 import { completePasswordReset, createPasswordResetForUser } from "@/lib/password-reset";
@@ -28,6 +29,7 @@ import {
 import { requireUser } from "@/lib/session";
 
 export async function registerUser(formData: FormData) {
+  await assertSameOriginRequest("auth.register");
   const parsed = registerSchema.safeParse({
     username: formString(formData, "username"),
     email: formString(formData, "email"),
@@ -95,6 +97,7 @@ export async function registerUser(formData: FormData) {
 }
 
 export async function requestPasswordReset(formData: FormData) {
+  await assertSameOriginRequest("auth.password_reset.request");
   const parsed = forgotPasswordSchema.safeParse({
     email: formString(formData, "email")
   });
@@ -126,6 +129,7 @@ export async function requestPasswordReset(formData: FormData) {
 }
 
 export async function resetPassword(formData: FormData) {
+  await assertSameOriginRequest("auth.password_reset.complete");
   const token = formString(formData, "token");
   const parsed = resetPasswordSchema.safeParse({
     token,
@@ -147,6 +151,7 @@ export async function resetPassword(formData: FormData) {
 }
 
 export async function verifyEmailAddress(formData: FormData) {
+  await assertSameOriginRequest("auth.email_verification.verify");
   const token = formString(formData, "token");
   const parsed = verificationTokenSchema.safeParse(token);
 
@@ -159,6 +164,7 @@ export async function verifyEmailAddress(formData: FormData) {
 }
 
 export async function resendVerificationEmail(formData: FormData) {
+  await assertSameOriginRequest("auth.email_verification.resend");
   const email = formString(formData, "email").trim().toLowerCase();
   const rateLimit = checkRateLimit(`email-verification:${email}`, {
     limit: 3,
@@ -179,6 +185,7 @@ export async function resendVerificationEmail(formData: FormData) {
 }
 
 export async function updateAccountProfile(formData: FormData) {
+  await assertSameOriginRequest("account.profile.update");
   const user = await requireUser();
   const parsed = accountProfileSchema.safeParse({
     username: formString(formData, "username"),
@@ -226,6 +233,7 @@ export async function updateAccountProfile(formData: FormData) {
 }
 
 export async function updateAccountPassword(formData: FormData) {
+  await assertSameOriginRequest("account.password.update");
   const sessionUser = await requireUser();
   const parsed = accountPasswordSchema.safeParse({
     currentPassword: formString(formData, "currentPassword"),
@@ -266,6 +274,7 @@ export async function updateAccountPassword(formData: FormData) {
 }
 
 export async function setTwoFactorMethod(formData: FormData) {
+  await assertSameOriginRequest("account.two_factor.update");
   const user = await requireUser();
   const method = formString(formData, "method") as TwoFactorMethod;
 
@@ -294,6 +303,7 @@ export async function setTwoFactorMethod(formData: FormData) {
 }
 
 export async function startAuthenticatorSetup() {
+  await assertSameOriginRequest("account.two_factor.authenticator.start");
   const sessionUser = await requireUser();
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: sessionUser.id },
@@ -309,6 +319,7 @@ export async function startAuthenticatorSetup() {
 }
 
 export async function verifyAuthenticatorSetup(formData: FormData) {
+  await assertSameOriginRequest("account.two_factor.authenticator.verify");
   const user = await requireUser();
   const parsed = twoFactorCodeSchema.safeParse({
     code: formString(formData, "code")
@@ -325,6 +336,7 @@ export async function verifyAuthenticatorSetup(formData: FormData) {
 }
 
 export async function unlinkAuthProvider(formData: FormData) {
+  await assertSameOriginRequest("account.oauth.unlink");
   const user = await requireUser();
   const providerId = formString(formData, "providerId");
   const dbUser = await prisma.user.findUniqueOrThrow({

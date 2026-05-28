@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { decryptSecret, encryptSecret } from "@/lib/secret-encryption";
 import { prisma } from "@/lib/prisma";
+import { publicBaseUrl } from "@/lib/url";
 
 export type OAuthProviderId = "google" | "github" | "discord" | "facebook";
 
@@ -106,9 +107,8 @@ export function encryptProviderSecret(secret: string) {
   return encryptSecret(secret);
 }
 
-export function oauthCallbackUrl(providerId: string) {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  return `${baseUrl.replace(/\/$/, "")}/api/auth/oauth/${providerId}/callback`;
+export function oauthCallbackUrl(providerId: string, request?: Request) {
+  return `${publicBaseUrl(request)}/api/auth/oauth/${providerId}/callback`;
 }
 
 export function generateOAuthState() {

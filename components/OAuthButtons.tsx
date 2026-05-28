@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { enabledLoginProviders } from "@/lib/oauth-providers";
 
 export async function OAuthButtons() {
@@ -13,13 +12,13 @@ export async function OAuthButtons() {
         <span className="h-px flex-1 bg-line" />
       </div>
       {providers.map((provider) => (
-        <Link
+        <a
           key={provider.id}
           className="btn-secondary w-full"
           href={`/api/auth/oauth/${provider.id}/start`}
         >
           Continue with {provider.name}
-        </Link>
+        </a>
       ))}
     </div>
   );

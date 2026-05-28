@@ -8,12 +8,14 @@ import {
   oauthCallbackUrl,
   pkceChallenge
 } from "@/lib/oauth-providers";
+import { isSameOriginRequest } from "@/lib/csrf";
+import { publicUrl } from "@/lib/url";
 
 export async function GET(request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
   const config = await getProviderRuntimeConfig(provider);
   if (!config) {
-    return NextResponse.redirect(new URL("/login?oauth=disabled", request.url));
+    return NextResponse.redirect(publicUrl("/login?oauth=disabled", request));
   }
 
   const session = await getServerSession(authOptions);
@@ -21,7 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
   const verifier = generatePkceVerifier();
   const url = new URL(config.definition.authorizationUrl);
   url.searchParams.set("client_id", config.clientId);
-  url.searchParams.set("redirect_uri", oauthCallbackUrl(provider));
+  url.searchParams.set("redirect_uri", oauthCallbackUrl(provider, request));
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", config.scopes.join(" "));
   url.searchParams.set("state", state);
@@ -43,7 +45,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     maxAge: 600,
     path: "/"
   });
-  if (session?.user?.id) {
+  if (session?.user?.id && isSameOriginRequest(request.headers)) {
     response.cookies.set(`oauth_link_${provider}`, session.user.id, {
       httpOnly: true,
       sameSite: "lax",

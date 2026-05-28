@@ -48,6 +48,13 @@ export const loginSchema = z.object({
     .max(256)
     .optional()
     .or(z.literal(""))
+    .transform((value) => value || undefined),
+  loginToken: z
+    .string()
+    .trim()
+    .max(256)
+    .optional()
+    .or(z.literal(""))
     .transform((value) => value || undefined)
 });
 

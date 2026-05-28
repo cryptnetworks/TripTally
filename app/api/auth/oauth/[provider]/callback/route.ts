@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { OAUTH_LOGIN_COOKIE } from "@/lib/cookies";
 import { createOAuthLoginToken } from "@/lib/oauth-login";
 import { getProviderRuntimeConfig, oauthCallbackUrl } from "@/lib/oauth-providers";
 import { bootstrapRole } from "@/lib/roles";
 import { emailDomainAllowed, getAuthSettings } from "@/lib/settings";
 import { writeSystemAuditLog } from "@/lib/audit";
+import { publicUrl } from "@/lib/url";
 
 type ProviderProfile = {
   id: string;
@@ -17,7 +19,7 @@ async function exchangeCode(input: {
   provider: string;
   code: string;
   verifier: string;
-  requestUrl: string;
+  request: Request;
 }) {
   const config = await getProviderRuntimeConfig(input.provider);
   if (!config) return null;
@@ -26,7 +28,7 @@ async function exchangeCode(input: {
     client_id: config.clientId,
     client_secret: config.clientSecret,
     code: input.code,
-    redirect_uri: oauthCallbackUrl(input.provider),
+    redirect_uri: oauthCallbackUrl(input.provider, input.request),
     grant_type: "authorization_code",
     code_verifier: input.verifier
   });
@@ -106,7 +108,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     ?.split("=")[1];
 
   const redirect = (path: string) => {
-    const response = NextResponse.redirect(new URL(path, request.url));
+    const response = NextResponse.redirect(publicUrl(path, request));
     response.cookies.delete(`oauth_state_${provider}`);
     response.cookies.delete(`oauth_pkce_${provider}`);
     response.cookies.delete(`oauth_link_${provider}`);
@@ -122,7 +124,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     return redirect("/login?oauth=invalid");
   }
 
-  const exchanged = await exchangeCode({ provider, code, verifier, requestUrl: request.url });
+  const exchanged = await exchangeCode({ provider, code, verifier, request });
   if (!exchanged) return redirect("/login?oauth=token");
 
   const profile = await providerProfile(provider, exchanged.token);
@@ -206,5 +208,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
 
   if (!user || user.disabledAt) return redirect("/login?oauth=denied");
   const token = await createOAuthLoginToken(user.id);
-  return redirect(`/login?oauthToken=${encodeURIComponent(token)}`);
+  const response = redirect("/login?oauth=complete");
+  response.cookies.set(OAUTH_LOGIN_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 5 * 60,
+    path: "/"
+  });
+  return response;
 }
