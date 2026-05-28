@@ -7,6 +7,7 @@
   --color-surface: #f7f9fb;
   --color-ocean: #0f766e;
   --color-coral: #e85d4f;
+  --color-brand-soft: #e7f5f1;
   --shadow-soft: 0 10px 30px rgba(24, 33, 47, 0.08);
 }
 
@@ -24,7 +25,9 @@ body {
 }
 
 body {
-  background: #f7f9fb;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.1), transparent 28rem),
+    linear-gradient(180deg, #ffffff 0%, #f7f9fb 42%, #eef5f6 100%);
   color: #18212f;
 }
 
@@ -58,5 +61,16 @@ textarea {
 
   .card {
     @apply rounded-lg border border-line bg-white shadow-soft;
+  }
+
+  .bg-brand-page {
+    background:
+      radial-gradient(circle at 15% 0%, rgba(15, 118, 110, 0.12), transparent 24rem),
+      radial-gradient(circle at 85% 10%, rgba(232, 93, 79, 0.08), transparent 20rem),
+      linear-gradient(180deg, #ffffff 0%, #f7f9fb 48%, #eef5f6 100%);
+  }
+
+  .auth-card {
+    @apply rounded-lg border border-white/70 bg-white/95 shadow-soft backdrop-blur;
   }
 }

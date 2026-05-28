@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   return (
     <PageShell>
       <PageHeader
-        eyebrow="TripTally"
+        eyebrow="Trip Tally"
         title="Dashboard"
         description="Review your trips, people, spending, and settlement status in one place."
         action={{ label: "Create Trip", href: "/trips/new" }}
