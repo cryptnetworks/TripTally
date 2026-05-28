@@ -56,8 +56,14 @@ export const tripSchema = z
   .object({
     name: z.string().trim().min(1).max(140),
     destination: optionalText(140),
-    startDate: dateStringSchema.optional().or(z.literal("")).transform((value) => value || undefined),
-    endDate: dateStringSchema.optional().or(z.literal("")).transform((value) => value || undefined)
+    startDate: dateStringSchema
+      .optional()
+      .or(z.literal(""))
+      .transform((value) => value || undefined),
+    endDate: dateStringSchema
+      .optional()
+      .or(z.literal(""))
+      .transform((value) => value || undefined)
   })
   .refine(
     (data) =>
@@ -72,7 +78,14 @@ export const tripSchema = z
 
 export const participantSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  email: z.email().trim().toLowerCase().max(120).optional().or(z.literal("")).transform((value) => value || undefined)
+  email: z
+    .email()
+    .trim()
+    .toLowerCase()
+    .max(120)
+    .optional()
+    .or(z.literal(""))
+    .transform((value) => value || undefined)
 });
 
 export const expenseSchema = z.object({

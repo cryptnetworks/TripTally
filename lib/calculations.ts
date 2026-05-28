@@ -33,15 +33,13 @@ export function calculateEqualShares(amount: number, participantCount: number) {
   const base = Math.floor(cents / participantCount);
   const remainder = cents % participantCount;
 
-  return Array.from({ length: participantCount }, (_, index) =>
-    (base + (index < remainder ? 1 : 0)) / 100
+  return Array.from(
+    { length: participantCount },
+    (_, index) => (base + (index < remainder ? 1 : 0)) / 100
   );
 }
 
-export function calculateBalances(
-  participants: Participant[],
-  expenses: ExpenseWithShares[]
-) {
+export function calculateBalances(participants: Participant[], expenses: ExpenseWithShares[]) {
   const totals = new Map<string, ParticipantWithBalances>();
 
   for (const participant of participants) {
@@ -63,16 +61,11 @@ export function calculateBalances(
       for (const share of expense.shares) {
         const participant = totals.get(share.participantId);
         if (participant) {
-          participant.owed = roundCurrency(
-            participant.owed + Number(share.shareAmount)
-          );
+          participant.owed = roundCurrency(participant.owed + Number(share.shareAmount));
         }
       }
     } else {
-      const equalShares = calculateEqualShares(
-        Number(expense.amount),
-        participants.length
-      );
+      const equalShares = calculateEqualShares(Number(expense.amount), participants.length);
       participants.forEach((participant, index) => {
         const summary = totals.get(participant.id);
         if (summary) {
@@ -93,9 +86,7 @@ export function calculateBalances(
   };
 }
 
-export function generateSettlementSuggestions(
-  balances: ParticipantWithBalances[]
-): Settlement[] {
+export function generateSettlementSuggestions(balances: ParticipantWithBalances[]): Settlement[] {
   const creditors = balances
     .filter((item) => item.net > 0)
     .map((item) => ({ ...item }))

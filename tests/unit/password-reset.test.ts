@@ -66,7 +66,9 @@ describe("password reset tokens", () => {
 
   it("rejects invalid or already used tokens", () => {
     expect(validatePasswordResetRecord(null)).toBe(false);
-    expect(validatePasswordResetRecord(record({ usedAt: new Date("2026-05-27T12:05:00Z") }))).toBe(false);
+    expect(validatePasswordResetRecord(record({ usedAt: new Date("2026-05-27T12:05:00Z") }))).toBe(
+      false
+    );
   });
 
   it("updates the password and invalidates the token after a successful reset", async () => {

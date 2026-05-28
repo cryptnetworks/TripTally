@@ -1,52 +1,10 @@
-import { Prisma } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import {
   calculateBalances,
   calculateEqualShares,
   generateSettlementSuggestions
 } from "@/lib/calculations";
-
-function participant(id: string, name: string) {
-  return {
-    id,
-    name,
-    email: null,
-    createdAt: new Date("2026-01-01T00:00:00"),
-    updatedAt: new Date("2026-01-01T00:00:00"),
-    tripId: "trip-1"
-  };
-}
-
-function expense({
-  id,
-  amount,
-  payerId,
-  shares
-}: {
-  id: string;
-  amount: number;
-  payerId: string;
-  shares: Array<{ participantId: string; shareAmount: number }>;
-}) {
-  return {
-    id,
-    title: id,
-    amount: new Prisma.Decimal(amount),
-    category: "Food",
-    date: new Date("2026-01-02T00:00:00"),
-    notes: null,
-    createdAt: new Date("2026-01-02T00:00:00"),
-    updatedAt: new Date("2026-01-02T00:00:00"),
-    payerId,
-    tripId: "trip-1",
-    shares: shares.map((share, index) => ({
-      id: `${id}-share-${index}`,
-      expenseId: id,
-      participantId: share.participantId,
-      shareAmount: new Prisma.Decimal(share.shareAmount)
-    }))
-  };
-}
+import { testExpense, testParticipant } from "@/tests/fixtures/triptally";
 
 describe("calculateEqualShares", () => {
   it("splits cents without losing or creating money", () => {
@@ -63,14 +21,14 @@ describe("calculateEqualShares", () => {
 
 describe("calculateBalances", () => {
   it("calculates paid, owed, net, and settlements", () => {
-    const alice = participant("alice", "Alice");
-    const bob = participant("bob", "Bob");
-    const claire = participant("claire", "Claire");
+    const alice = testParticipant("alice", "Alice");
+    const bob = testParticipant("bob", "Bob");
+    const claire = testParticipant("claire", "Claire");
 
     const result = calculateBalances(
       [alice, bob, claire],
       [
-        expense({
+        testExpense({
           id: "rental",
           amount: 90,
           payerId: alice.id,
@@ -80,7 +38,7 @@ describe("calculateBalances", () => {
             { participantId: claire.id, shareAmount: 30 }
           ]
         }),
-        expense({
+        testExpense({
           id: "dinner",
           amount: 60,
           payerId: bob.id,
@@ -108,12 +66,12 @@ describe("calculateBalances", () => {
   });
 
   it("falls back to equal split when an expense has no stored shares", () => {
-    const alice = participant("alice", "Alice");
-    const bob = participant("bob", "Bob");
+    const alice = testParticipant("alice", "Alice");
+    const bob = testParticipant("bob", "Bob");
 
     const result = calculateBalances(
       [alice, bob],
-      [expense({ id: "taxi", amount: 25, payerId: alice.id, shares: [] })]
+      [testExpense({ id: "taxi", amount: 25, payerId: alice.id, shares: [] })]
     );
 
     expect(result.balances).toEqual([
@@ -125,10 +83,10 @@ describe("calculateBalances", () => {
 
 describe("generateSettlementSuggestions", () => {
   it("minimizes multi-person debt settlement", () => {
-    const alice = participant("alice", "Alice");
-    const bob = participant("bob", "Bob");
-    const claire = participant("claire", "Claire");
-    const drew = participant("drew", "Drew");
+    const alice = testParticipant("alice", "Alice");
+    const bob = testParticipant("bob", "Bob");
+    const claire = testParticipant("claire", "Claire");
+    const drew = testParticipant("drew", "Drew");
 
     const settlements = generateSettlementSuggestions([
       { participant: alice, paid: 0, owed: 0, net: 50 },

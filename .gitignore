@@ -13,3 +13,6 @@ prisma/dev.db
 coverage/
 playwright-report/
 test-results/
+certbot/*.ini
+!certbot/*.ini.example
+cloudflare/credentials.json

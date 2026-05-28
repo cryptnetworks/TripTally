@@ -70,7 +70,11 @@ if (!databaseUrl) {
   fail("DATABASE_URL is required.");
 }
 
-if (!databaseUrl.startsWith("file:") && !databaseUrl.startsWith("postgres://") && !databaseUrl.startsWith("postgresql://")) {
+if (
+  !databaseUrl.startsWith("file:") &&
+  !databaseUrl.startsWith("postgres://") &&
+  !databaseUrl.startsWith("postgresql://")
+) {
   fail("DATABASE_URL must start with file:, postgres://, or postgresql://.");
 }
 
@@ -91,7 +95,11 @@ if (
   fail("NEXTAUTH_SECRET must be set to a real random value.");
 }
 
-if (nodeEnv === "production" && nextAuthUrl.startsWith("http://") && !nextAuthUrl.includes("localhost")) {
+if (
+  nodeEnv === "production" &&
+  nextAuthUrl.startsWith("http://") &&
+  !nextAuthUrl.includes("localhost")
+) {
   warn("NEXTAUTH_URL is HTTP in production. Use HTTPS behind a trusted proxy.");
 }
 

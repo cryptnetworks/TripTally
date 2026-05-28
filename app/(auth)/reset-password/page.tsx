@@ -25,14 +25,45 @@ export default async function ResetPasswordPage({
         <form className="mt-6 grid gap-4" action={resetPassword} data-testid="reset-password-form">
           <input data-testid="reset-password-token" name="token" type="hidden" value={token} />
           <div>
-            <label className="label" htmlFor="password">New password</label>
-            <input className="field" data-testid="reset-password-new" id="password" name="password" type="password" autoComplete="new-password" minLength={8} maxLength={128} required />
+            <label className="label" htmlFor="password">
+              New password
+            </label>
+            <input
+              className="field"
+              data-testid="reset-password-new"
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              required
+            />
           </div>
           <div>
-            <label className="label" htmlFor="confirmPassword">Confirm password</label>
-            <input className="field" data-testid="reset-password-confirm" id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} maxLength={128} required />
+            <label className="label" htmlFor="confirmPassword">
+              Confirm password
+            </label>
+            <input
+              className="field"
+              data-testid="reset-password-confirm"
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              required
+            />
           </div>
-          <button className="btn-primary" data-testid="reset-password-submit" disabled={!token} type="submit">Update password</button>
+          <button
+            className="btn-primary"
+            data-testid="reset-password-submit"
+            disabled={!token}
+            type="submit"
+          >
+            Update password
+          </button>
         </form>
         <p className="mt-5 text-center text-sm text-muted">
           Need a new link?{" "}

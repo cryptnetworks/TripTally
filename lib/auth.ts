@@ -7,8 +7,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validation";
 
 const useSecureCookies =
-  process.env.NODE_ENV === "production" &&
-  process.env.NEXTAUTH_URL?.startsWith("https://");
+  process.env.NODE_ENV === "production" && process.env.NEXTAUTH_URL?.startsWith("https://");
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -23,37 +22,36 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login"
   },
   useSecureCookies,
-  cookies:
-    useSecureCookies
-      ? {
-          sessionToken: {
-            name: "__Secure-next-auth.session-token",
-            options: {
-              httpOnly: true,
-              sameSite: "lax",
-              path: "/",
-              secure: true
-            }
-          },
-          callbackUrl: {
-            name: "__Secure-next-auth.callback-url",
-            options: {
-              sameSite: "lax",
-              path: "/",
-              secure: true
-            }
-          },
-          csrfToken: {
-            name: "__Host-next-auth.csrf-token",
-            options: {
-              httpOnly: true,
-              sameSite: "lax",
-              path: "/",
-              secure: true
-            }
+  cookies: useSecureCookies
+    ? {
+        sessionToken: {
+          name: "__Secure-next-auth.session-token",
+          options: {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            secure: true
+          }
+        },
+        callbackUrl: {
+          name: "__Secure-next-auth.callback-url",
+          options: {
+            sameSite: "lax",
+            path: "/",
+            secure: true
+          }
+        },
+        csrfToken: {
+          name: "__Host-next-auth.csrf-token",
+          options: {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            secure: true
           }
         }
-      : undefined,
+      }
+    : undefined,
   providers: [
     CredentialsProvider({
       name: "Email and password",

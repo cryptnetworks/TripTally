@@ -26,9 +26,7 @@ export function ExpenseCard({ expense, tripId }: ExpenseCardProps) {
           <p className="text-xs text-muted">Paid by {expense.payer.name}</p>
         </div>
       </div>
-      {expense.notes ? (
-        <p className="mt-3 text-sm leading-6 text-muted">{expense.notes}</p>
-      ) : null}
+      {expense.notes ? <p className="mt-3 text-sm leading-6 text-muted">{expense.notes}</p> : null}
       <div className="mt-3 flex items-center justify-between gap-3">
         <p className="text-xs text-muted">
           Shared by {expense.shares.length} participant{expense.shares.length === 1 ? "" : "s"}

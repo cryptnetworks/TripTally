@@ -44,7 +44,10 @@ export function passwordResetExpiresAt(now = new Date()) {
   return new Date(now.getTime() + passwordResetExpirationMinutes() * 60 * 1000);
 }
 
-export function isPasswordResetTokenExpired(record: Pick<PasswordResetRecord, "expiresAt">, now = new Date()) {
+export function isPasswordResetTokenExpired(
+  record: Pick<PasswordResetRecord, "expiresAt">,
+  now = new Date()
+) {
   return record.expiresAt.getTime() <= now.getTime();
 }
 
@@ -82,10 +85,7 @@ export async function createPasswordResetForUser(user: { id: string; email: stri
   logger.info("auth.password_reset.created", { userId: user.id });
 }
 
-export function validatePasswordResetRecord(
-  record: PasswordResetRecord | null,
-  now = new Date()
-) {
+export function validatePasswordResetRecord(record: PasswordResetRecord | null, now = new Date()) {
   if (!record || record.usedAt || isPasswordResetTokenExpired(record, now)) {
     return false;
   }

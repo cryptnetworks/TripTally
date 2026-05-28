@@ -1,0 +1,8 @@
+# Copy this file to certbot/cloudflare.ini or let scripts/init-letsencrypt.sh
+# create it from CLOUDFLARE_API_TOKEN in .env.
+#
+# Required Cloudflare token permissions:
+# - Zone:DNS:Edit
+# - Zone:Zone:Read
+# Scope the token to the zone that owns DOMAIN.
+dns_cloudflare_api_token = replace-with-cloudflare-api-token

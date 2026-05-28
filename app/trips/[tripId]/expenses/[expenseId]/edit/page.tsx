@@ -34,60 +34,138 @@ export default async function EditExpensePage({
 
   return (
     <PageShell>
-      <PageHeader eyebrow={trip.name} title="Edit expense" description="Update the cost details or remove this expense." />
+      <PageHeader
+        eyebrow={trip.name}
+        title="Edit expense"
+        description="Update the cost details or remove this expense."
+      />
       <section className="card mx-auto max-w-2xl p-5">
         <div className="mb-4 flex justify-end">
           <DeleteButton action={removeExpense} label={`Delete ${expense.title}`} />
         </div>
         <form className="grid gap-4" action={action} data-testid="expense-form">
           <div>
-            <label className="label" htmlFor="title">Title</label>
-            <input className="field" data-testid="expense-title" id="title" name="title" defaultValue={expense.title} maxLength={140} required />
+            <label className="label" htmlFor="title">
+              Title
+            </label>
+            <input
+              className="field"
+              data-testid="expense-title"
+              id="title"
+              name="title"
+              defaultValue={expense.title}
+              maxLength={140}
+              required
+            />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="label" htmlFor="amount">Amount</label>
-              <input className="field" data-testid="expense-amount" id="amount" name="amount" type="number" min="0.01" step="0.01" defaultValue={Number(expense.amount).toFixed(2)} required />
+              <label className="label" htmlFor="amount">
+                Amount
+              </label>
+              <input
+                className="field"
+                data-testid="expense-amount"
+                id="amount"
+                name="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                defaultValue={Number(expense.amount).toFixed(2)}
+                required
+              />
             </div>
             <div>
-              <label className="label" htmlFor="category">Category</label>
-              <select className="field" data-testid="expense-category" id="category" name="category" defaultValue={expense.category} required>
+              <label className="label" htmlFor="category">
+                Category
+              </label>
+              <select
+                className="field"
+                data-testid="expense-category"
+                id="category"
+                name="category"
+                defaultValue={expense.category}
+                required
+              >
                 {categories.map((category) => (
-                  <option key={category} value={category}>{category}</option>
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="label" htmlFor="payerId">Payer</label>
-              <select className="field" data-testid="expense-payer" id="payerId" name="payerId" defaultValue={expense.payerId} required>
+              <label className="label" htmlFor="payerId">
+                Payer
+              </label>
+              <select
+                className="field"
+                data-testid="expense-payer"
+                id="payerId"
+                name="payerId"
+                defaultValue={expense.payerId}
+                required
+              >
                 {trip.participants.map((participant) => (
-                  <option key={participant.id} value={participant.id}>{participant.name}</option>
+                  <option key={participant.id} value={participant.id}>
+                    {participant.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="label" htmlFor="date">Date</label>
-              <input className="field" data-testid="expense-date" id="date" name="date" type="date" defaultValue={dateInputValue(expense.date)} required />
+              <label className="label" htmlFor="date">
+                Date
+              </label>
+              <input
+                className="field"
+                data-testid="expense-date"
+                id="date"
+                name="date"
+                type="date"
+                defaultValue={dateInputValue(expense.date)}
+                required
+              />
             </div>
           </div>
           <fieldset>
             <legend className="label">Shared by</legend>
             <div className="grid gap-2 sm:grid-cols-2" data-testid="expense-shares">
               {trip.participants.map((participant) => (
-                <label key={participant.id} className="flex min-h-11 items-center gap-3 rounded-lg border border-line bg-white px-3 py-2 text-sm">
-                  <input data-testid="expense-share-checkbox" name="sharedParticipantIds" type="checkbox" value={participant.id} defaultChecked={sharedIds.has(participant.id)} />
+                <label
+                  key={participant.id}
+                  className="flex min-h-11 items-center gap-3 rounded-lg border border-line bg-white px-3 py-2 text-sm"
+                >
+                  <input
+                    data-testid="expense-share-checkbox"
+                    name="sharedParticipantIds"
+                    type="checkbox"
+                    value={participant.id}
+                    defaultChecked={sharedIds.has(participant.id)}
+                  />
                   {participant.name}
                 </label>
               ))}
             </div>
           </fieldset>
           <div>
-            <label className="label" htmlFor="notes">Notes</label>
-            <textarea className="field min-h-28" data-testid="expense-notes" id="notes" name="notes" defaultValue={expense.notes || ""} maxLength={500} />
+            <label className="label" htmlFor="notes">
+              Notes
+            </label>
+            <textarea
+              className="field min-h-28"
+              data-testid="expense-notes"
+              id="notes"
+              name="notes"
+              defaultValue={expense.notes || ""}
+              maxLength={500}
+            />
           </div>
-          <button className="btn-primary" data-testid="expense-submit" type="submit">Save expense</button>
+          <button className="btn-primary" data-testid="expense-submit" type="submit">
+            Save expense
+          </button>
         </form>
       </section>
     </PageShell>

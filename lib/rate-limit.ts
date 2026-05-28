@@ -5,10 +5,7 @@ type Bucket = {
 
 const buckets = new Map<string, Bucket>();
 
-export function checkRateLimit(
-  key: string,
-  options: { limit: number; windowMs: number }
-) {
+export function checkRateLimit(key: string, options: { limit: number; windowMs: number }) {
   const now = Date.now();
   const bucket = buckets.get(key);
 

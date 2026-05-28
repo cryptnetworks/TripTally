@@ -84,6 +84,7 @@ Useful checks:
 
 ```bash
 npm run lint
+npm run format:check
 npm run type-check
 npm run test:unit
 npm run test:integration
@@ -183,10 +184,28 @@ Docker also checks `GET /api/health` every 30 seconds.
 Docker Compose is also supported:
 
 ```bash
-docker compose up --build
+docker compose up --build -d triptally
 ```
 
-Compose mounts the same `triptally_data` volume at `/app/data`.
+Compose mounts the same `triptally_data` volume at `/app/data`. The Compose file is production-oriented: TripTally is private on the Docker network. Enable either the `nginx` profile for a traditional public reverse proxy or the `cloudflare` profile for Cloudflare Tunnel.
+
+If `docker compose up -d` only starts `triptally`, no deployment profile is enabled. Set one of these in `.env`:
+
+```env
+COMPOSE_PROFILES=nginx
+```
+
+or:
+
+```env
+COMPOSE_PROFILES=cloudflare
+```
+
+Then run:
+
+```bash
+docker compose up -d --build
+```
 
 To recreate the container while keeping the SQLite database:
 
@@ -225,6 +244,169 @@ DATABASE_URL="file:/app/data/triptally.db"
 NEXTAUTH_URL="https://your-domain.example"
 NEXTAUTH_SECRET="generate-a-long-random-secret"
 ```
+
+## Production Deployment Modes
+
+TripTally supports two production deployment paths:
+
+1. Traditional reverse proxy with Nginx, Certbot, Let's Encrypt, and DNS-01 validation.
+2. Cloudflare Tunnel with no public inbound ports on the server.
+
+Both modes keep the TripTally app private inside the Docker network on `triptally:3000`.
+
+## Mode 1: Nginx And Certbot SSL
+
+The Nginx Compose profile runs:
+
+- `triptally`: the private Next.js app on internal port 3000.
+- `nginx`: public reverse proxy on ports 80 and 443.
+- `certbot`: Let's Encrypt certificate issuance and renewal using DNS-01.
+
+Certificates persist in Docker volumes:
+
+- `certbot_etc:/etc/letsencrypt`
+- `certbot_var:/var/lib/letsencrypt`
+
+DNS setup:
+
+1. Create an `A` record for your domain, for example `app.example.com`, pointing to the server's public IPv4 address.
+2. Optional: create an `AAAA` record if the server has public IPv6.
+3. Wait for DNS propagation before requesting a production certificate.
+
+Cloudflare token setup:
+
+1. In Cloudflare, create an API token scoped to the zone that owns `DOMAIN`.
+2. Grant `Zone:DNS:Edit` and `Zone:Zone:Read`.
+3. Put the token in `.env` as `CLOUDFLARE_API_TOKEN`, or copy `certbot/cloudflare.ini.example` to `certbot/cloudflare.ini` and set the token there.
+4. Keep `certbot/cloudflare.ini` private. It is ignored by git and the scripts set mode `600`.
+
+Production `.env` example:
+
+```env
+NODE_ENV=production
+DATABASE_URL=file:/app/data/triptally.db
+DOMAIN=app.example.com
+NEXTAUTH_URL=https://app.example.com
+AUTH_URL=https://app.example.com
+NEXTAUTH_SECRET=generate-a-long-random-secret
+LETSENCRYPT_EMAIL=admin@example.com
+CERTBOT_STAGING=1
+DNS_PROVIDER=cloudflare
+CLOUDFLARE_API_TOKEN=your-cloudflare-token
+SMTP_ENABLED=false
+```
+
+Use staging first to avoid Let's Encrypt rate limits:
+
+```bash
+docker compose up -d triptally
+./scripts/init-letsencrypt.sh
+docker compose --profile nginx up -d
+```
+
+When staging works, switch to production certificates:
+
+```bash
+# edit .env
+CERTBOT_STAGING=0
+
+./scripts/init-letsencrypt.sh
+docker compose --profile nginx up -d
+```
+
+Manual certificate renewal:
+
+```bash
+./scripts/renew-certs.sh
+```
+
+Example cron entry for twice-daily renewal checks:
+
+```cron
+17 3,15 * * * cd /path/to/TripTally && ./scripts/renew-certs.sh >> /var/log/triptally-certbot.log 2>&1
+```
+
+Nginx behavior:
+
+- HTTP redirects to HTTPS.
+- HTTPS proxies to `triptally:3000`.
+- WebSocket upgrade headers are supported.
+- Proxy headers include `Host`, `X-Real-IP`, `X-Forwarded-For`, and `X-Forwarded-Proto`.
+- Security headers include HSTS, `X-Content-Type-Options`, `X-Frame-Options`, and `Referrer-Policy`.
+- Gzip is enabled for common text responses.
+
+Troubleshooting:
+
+- If Certbot cannot validate DNS, confirm the Cloudflare token has `DNS:Edit` and is scoped to the correct zone.
+- If the certificate is issued for staging, browsers will show it as untrusted. Set `CERTBOT_STAGING=0` and rerun `./scripts/init-letsencrypt.sh`.
+- If Nginx fails before the first certificate is issued, rerun `./scripts/init-letsencrypt.sh`; it creates a temporary self-signed certificate before requesting the real one.
+- If auth callbacks point to HTTP or localhost, verify `NEXTAUTH_URL` and `AUTH_URL` are both set to `https://${DOMAIN}`.
+- If DNS changes were recent, increase `DNS_PROPAGATION_SECONDS`, for example `DNS_PROPAGATION_SECONDS=120`.
+
+## Mode 2: Cloudflare Tunnel
+
+Cloudflare Tunnel publishes TripTally without opening inbound ports 80 or 443 on the server. Cloudflare manages public HTTPS and forwards requests through the `cloudflared` container to the private app service.
+
+Cloudflare Tunnel architecture:
+
+- `triptally`: private Next.js app on internal port 3000.
+- `cloudflared`: outbound-only tunnel client.
+- Public HTTPS terminates at Cloudflare.
+- Tunnel route forwards `app.example.com` to `http://triptally:3000`.
+
+Cloudflare Tunnel `.env` example:
+
+```env
+NODE_ENV=production
+DATABASE_URL=file:/app/data/triptally.db
+DOMAIN=app.example.com
+PUBLIC_APP_URL=https://app.example.com
+NEXTAUTH_URL=https://app.example.com
+AUTH_URL=https://app.example.com
+NEXTAUTH_SECRET=generate-a-long-random-secret
+CLOUDFLARE_TUNNEL_TOKEN=your-cloudflare-tunnel-token
+SMTP_ENABLED=false
+```
+
+Cloudflare Zero Trust setup:
+
+1. Create a tunnel in Cloudflare Zero Trust.
+2. Add a public hostname:
+   - Hostname: `app.example.com`
+   - Service: `http://triptally:3000`
+3. Copy the tunnel token into `.env` as `CLOUDFLARE_TUNNEL_TOKEN`.
+4. Make sure `NEXTAUTH_URL`, `AUTH_URL`, and `PUBLIC_APP_URL` all use `https://app.example.com`.
+
+Start the Cloudflare Tunnel deployment:
+
+```bash
+docker compose --profile cloudflare up -d --build
+```
+
+No public inbound ports are required for Cloudflare Tunnel. The `cloudflared` container makes an outbound connection to Cloudflare and shares the Docker network with `triptally`.
+
+Optional config-file mode:
+
+`cloudflare/config.yml.example` shows the equivalent tunnel configuration:
+
+```yaml
+tunnel: triptally
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: app.example.com
+    service: http://triptally:3000
+  - service: http_status:404
+```
+
+The default Compose service uses token mode because it is simpler to deploy and avoids mounting Cloudflare credential JSON. To switch to config-file mode later, mount `cloudflare/config.yml` and `cloudflare/credentials.json`, then replace the `cloudflared` command with `tunnel --no-autoupdate run triptally`.
+
+Cloudflare Tunnel troubleshooting:
+
+- If the tunnel starts but the app is unavailable, confirm the public hostname service is exactly `http://triptally:3000`.
+- If auth redirects to localhost or HTTP, fix `NEXTAUTH_URL`, `AUTH_URL`, and `PUBLIC_APP_URL`.
+- If the container exits immediately, rotate/copy a fresh `CLOUDFLARE_TUNNEL_TOKEN`.
+- Do not also run the `nginx` profile unless you intentionally want both deployment paths active.
 
 Production hardening included in the app:
 

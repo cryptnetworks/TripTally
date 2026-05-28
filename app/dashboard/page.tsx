@@ -20,7 +20,8 @@ export default async function DashboardPage() {
 
   const totalParticipants = trips.reduce((sum, trip) => sum + trip.participants.length, 0);
   const totalExpenses = trips.reduce(
-    (sum, trip) => sum + trip.expenses.reduce((inner, expense) => inner + Number(expense.amount), 0),
+    (sum, trip) =>
+      sum + trip.expenses.reduce((inner, expense) => inner + Number(expense.amount), 0),
     0
   );
 
@@ -63,7 +64,9 @@ export default async function DashboardPage() {
         <>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-ink">Recent trips</h2>
-            <Link className="text-sm font-semibold text-ocean" href="/trips">View all</Link>
+            <Link className="text-sm font-semibold text-ocean" href="/trips">
+              View all
+            </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {trips.slice(0, 4).map((trip) => (

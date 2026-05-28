@@ -7,9 +7,10 @@ const config = [
   {
     ignores: [
       ".next/**",
+      "coverage/**",
       "node_modules/**",
-      "venv/**",
-      "**/*.py"
+      "playwright-report/**",
+      "test-results/**"
     ]
   }
 ];

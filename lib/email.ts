@@ -30,11 +30,7 @@ function baseTransportOptions() {
   };
 }
 
-export async function sendPasswordResetEmail({
-  to,
-  resetUrl,
-  expiresInMinutes
-}: ResetEmailInput) {
+export async function sendPasswordResetEmail({ to, resetUrl, expiresInMinutes }: ResetEmailInput) {
   if (!smtpConfigured()) {
     logger.info("email.password_reset.disabled");
     if (process.env.NODE_ENV !== "production") {

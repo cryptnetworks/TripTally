@@ -14,8 +14,8 @@ services:
       # Keep SQLite inside the mounted volume even when the local .env uses file:./dev.db.
       TRIPTALLY_SQLITE_PATH: /app/data/triptally.db
       TRIPTALLY_ALLOW_INSECURE_SECRET: ${TRIPTALLY_ALLOW_INSECURE_SECRET:-}
-    ports:
-      - "${TRIPTALLY_HOST_PORT:-3000}:3000"
+    expose:
+      - "3000"
     volumes:
       - triptally_data:/app/data
     restart: unless-stopped
@@ -26,5 +26,53 @@ services:
       start_period: 30s
       retries: 3
 
+  nginx:
+    image: nginx:alpine
+    container_name: triptally-nginx
+    profiles:
+      - nginx
+    depends_on:
+      triptally:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    command: >
+      /bin/sh -c "rm -f /etc/nginx/conf.d/default.conf
+      && /docker-entrypoint.sh nginx -g 'daemon off;'"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/triptally.conf:/etc/nginx/templates/triptally.conf.template:ro
+      - certbot_etc:/etc/letsencrypt:ro
+      - certbot_var:/var/lib/letsencrypt:ro
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/dns-cloudflare:latest
+    container_name: triptally-certbot
+    profiles:
+      - nginx
+    env_file:
+      - .env
+    volumes:
+      - certbot_etc:/etc/letsencrypt
+      - certbot_var:/var/lib/letsencrypt
+      - ./certbot/cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: triptally-cloudflared
+    profiles:
+      - cloudflare
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      triptally:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   triptally_data:
+  certbot_etc:
+  certbot_var:

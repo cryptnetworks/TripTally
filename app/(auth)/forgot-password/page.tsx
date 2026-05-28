@@ -21,12 +21,29 @@ export default async function ForgotPasswordPage({
             If that email is registered, a reset link has been sent.
           </p>
         ) : null}
-        <form className="mt-6 grid gap-4" action={requestPasswordReset} data-testid="forgot-password-form">
+        <form
+          className="mt-6 grid gap-4"
+          action={requestPasswordReset}
+          data-testid="forgot-password-form"
+        >
           <div>
-            <label className="label" htmlFor="email">Email</label>
-            <input className="field" data-testid="forgot-password-email" id="email" name="email" type="email" autoComplete="email" maxLength={120} required />
+            <label className="label" htmlFor="email">
+              Email
+            </label>
+            <input
+              className="field"
+              data-testid="forgot-password-email"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              maxLength={120}
+              required
+            />
           </div>
-          <button className="btn-primary" data-testid="forgot-password-submit" type="submit">Send reset link</button>
+          <button className="btn-primary" data-testid="forgot-password-submit" type="submit">
+            Send reset link
+          </button>
         </form>
         <p className="mt-5 text-center text-sm text-muted">
           Remembered it?{" "}

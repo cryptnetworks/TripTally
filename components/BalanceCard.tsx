@@ -21,7 +21,11 @@ export function BalanceCard({ balance }: { balance: ParticipantWithBalances }) {
       <p className="mt-2 text-sm text-muted">
         Paid {formatCurrency(balance.paid)}, owes {formatCurrency(balance.owed)}
       </p>
-      <p className={isPositive ? "mt-2 text-2xl font-bold text-ocean" : "mt-2 text-2xl font-bold text-coral"}>
+      <p
+        className={
+          isPositive ? "mt-2 text-2xl font-bold text-ocean" : "mt-2 text-2xl font-bold text-coral"
+        }
+      >
         {formatCurrency(balance.net)}
       </p>
     </article>

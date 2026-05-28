@@ -93,7 +93,10 @@ describe("expense CRUD integration", () => {
     });
 
     expect(expense.shares).toHaveLength(2);
-    expect(expense.shares.reduce((sum, share) => sum + Number(share.shareAmount), 0)).toBeCloseTo(21.01, 2);
+    expect(expense.shares.reduce((sum, share) => sum + Number(share.shareAmount), 0)).toBeCloseTo(
+      21.01,
+      2
+    );
 
     const updated = await prisma.expense.update({
       where: { id: expense.id },

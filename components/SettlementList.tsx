@@ -3,7 +3,10 @@ import type { Settlement } from "@/lib/calculations";
 export function SettlementList({ settlements }: { settlements: Settlement[] }) {
   if (settlements.length === 0) {
     return (
-      <div className="rounded-lg border border-line bg-white p-4 text-sm text-muted" data-testid="settlement-empty">
+      <div
+        className="rounded-lg border border-line bg-white p-4 text-sm text-muted"
+        data-testid="settlement-empty"
+      >
         No settlement recommendations yet.
       </div>
     );

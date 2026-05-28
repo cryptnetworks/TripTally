@@ -7,12 +7,7 @@ type EmptyStateProps = {
   actionHref?: string;
 };
 
-export function EmptyState({
-  title,
-  description,
-  actionLabel,
-  actionHref
-}: EmptyStateProps) {
+export function EmptyState({ title, description, actionLabel, actionHref }: EmptyStateProps) {
   return (
     <div className="card flex min-h-56 flex-col items-center justify-center px-5 py-10 text-center">
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-teal-50 text-ocean">
