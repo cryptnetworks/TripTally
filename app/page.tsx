@@ -66,15 +66,22 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="card overflow-hidden bg-white/95 p-4 md:p-5">
-          <div className="rounded-lg bg-gradient-to-br from-teal-50 via-white to-orange-50 p-4">
+        <div className="card overflow-hidden p-4 md:p-5">
+          <div
+            className="rounded-lg p-4"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--app-brand-soft), var(--app-card-solid), var(--app-surface))"
+            }}
+          >
             <BrandLogo className="mx-auto mb-6" priority />
             <div className="grid gap-3">
               {features.map((feature) => {
                 const Icon = feature.icon;
                 return (
                   <article
-                    className="rounded-lg border border-line bg-white/90 p-4 shadow-sm"
+                    className="rounded-lg border border-line p-4 shadow-sm"
+                    style={{ backgroundColor: "var(--app-card)" }}
                     key={feature.title}
                   >
                     <div className="flex gap-3">
