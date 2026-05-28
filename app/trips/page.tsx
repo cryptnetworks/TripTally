@@ -8,9 +8,16 @@ import { requireUser } from "@/lib/session";
 export default async function TripsPage() {
   const user = await requireUser();
   const trips = await prisma.trip.findMany({
-    where: { ownerId: user.id },
+    where: { OR: [{ ownerId: user.id }, { members: { some: { userId: user.id } } }] },
     orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
-    include: { participants: true, expenses: true }
+    include: {
+      participants: true,
+      expenses: {
+        where: {
+          OR: [{ status: { not: "draft" } }, { createdByUserId: user.id }]
+        }
+      }
+    }
   });
 
   return (

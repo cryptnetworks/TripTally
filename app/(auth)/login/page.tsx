@@ -14,7 +14,6 @@ export default async function LoginPage({
     verified?: string;
     verificationSent?: string;
     oauth?: string;
-    oauthToken?: string;
   }>;
 }) {
   const query = await searchParams;

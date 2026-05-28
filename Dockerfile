@@ -7,7 +7,7 @@ WORKDIR /app
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
-RUN npm install --no-audit --no-fund --loglevel=error
+RUN npm ci --no-audit --no-fund --loglevel=error
 
 # Build with the same Alpine runtime family used by the final image. Prisma is
 # generated here so the production image always contains a matching client.

@@ -3,7 +3,7 @@ import type { User } from "@prisma/client";
 import { afterAll, describe, expect, it } from "vitest";
 import { POST as loginPost } from "@/app/api/auth/login/route";
 import { authOptions } from "@/lib/auth";
-import { createOAuthLoginToken } from "@/lib/oauth-login";
+import { consumeOAuthLoginToken, createOAuthLoginToken } from "@/lib/oauth-login";
 import { encryptSecret } from "@/lib/secret-encryption";
 import { generateTotpCode } from "@/lib/totp";
 import { prisma } from "@/lib/prisma";
@@ -324,5 +324,72 @@ describe("login API", () => {
       id: user.id,
       email: user.email
     });
+  });
+
+  it("rejects an invalid OAuth login token", async () => {
+    await expect(
+      authorize({
+        email: "oauth@example.com",
+        oauthLoginToken: "invalid-token"
+      })
+    ).resolves.toBeNull();
+  });
+
+  it("rejects an invalid OAuth login cookie token", async () => {
+    await expect(
+      credentialsProvider.options.authorize(
+        {
+          email: "oauth@example.com",
+          oauthLoginToken: "cookie"
+        },
+        {
+          headers: {
+            cookie: "__Host-triptally.oauth-login-token=invalid-token"
+          }
+        }
+      )
+    ).resolves.toBeNull();
+  });
+
+  it("rejects an expired OAuth login token", async () => {
+    const user = await createLoginUser("oauth-expired-token");
+    const token = await createOAuthLoginToken(user.id);
+
+    await prisma.oAuthLoginToken.updateMany({
+      where: { userId: user.id },
+      data: { expiresAt: new Date(Date.now() - 60_000) }
+    });
+
+    await expect(consumeOAuthLoginToken(token)).resolves.toBeNull();
+    await expect(
+      authorize({
+        email: "oauth@example.com",
+        oauthLoginToken: token
+      })
+    ).resolves.toBeNull();
+  });
+
+  it("rejects an expired OAuth login cookie token", async () => {
+    const user = await createLoginUser("oauth-expired-cookie-token");
+    const token = await createOAuthLoginToken(user.id);
+
+    await prisma.oAuthLoginToken.updateMany({
+      where: { userId: user.id },
+      data: { expiresAt: new Date(Date.now() - 60_000) }
+    });
+
+    await expect(
+      credentialsProvider.options.authorize(
+        {
+          email: "oauth@example.com",
+          oauthLoginToken: "cookie"
+        },
+        {
+          headers: {
+            cookie: `__Host-triptally.oauth-login-token=${token}`
+          }
+        }
+      )
+    ).resolves.toBeNull();
   });
 });

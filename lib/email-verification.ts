@@ -2,15 +2,12 @@ import crypto from "crypto";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { sendEmailVerificationEmail } from "@/lib/email";
+import { digestLookupToken } from "@/lib/token-digest";
 
 const VERIFICATION_EXPIRATION_HOURS = 24;
 
 function generateVerificationToken() {
   return crypto.randomBytes(32).toString("base64url");
-}
-
-function hashToken(token: string) {
-  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 function buildVerificationUrl(token: string) {
@@ -29,7 +26,7 @@ export async function createEmailVerificationForUser(user: { id: string; email: 
     }),
     prisma.emailVerificationToken.create({
       data: {
-        tokenHash: hashToken(token),
+        tokenHash: digestLookupToken(token),
         expiresAt: new Date(now.getTime() + VERIFICATION_EXPIRATION_HOURS * 60 * 60 * 1000),
         userId: user.id
       }
@@ -48,7 +45,7 @@ export async function createEmailVerificationForUser(user: { id: string; email: 
 export async function verifyEmailToken(token: string) {
   const now = new Date();
   const record = await prisma.emailVerificationToken.findUnique({
-    where: { tokenHash: hashToken(token) }
+    where: { tokenHash: digestLookupToken(token) }
   });
 
   if (!record || record.usedAt || record.expiresAt.getTime() <= now.getTime()) {

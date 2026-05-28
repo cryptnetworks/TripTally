@@ -1,9 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-
-function hashToken(token: string) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
+import { digestLookupToken } from "@/lib/token-digest";
 
 export function generateOAuthLoginToken() {
   return crypto.randomBytes(32).toString("base64url");
@@ -13,7 +10,7 @@ export async function createOAuthLoginToken(userId: string) {
   const token = generateOAuthLoginToken();
   await prisma.oAuthLoginToken.create({
     data: {
-      tokenHash: hashToken(token),
+      tokenHash: digestLookupToken(token),
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       userId
     }
@@ -23,7 +20,7 @@ export async function createOAuthLoginToken(userId: string) {
 
 export async function consumeOAuthLoginToken(token: string) {
   const record = await prisma.oAuthLoginToken.findUnique({
-    where: { tokenHash: hashToken(token) },
+    where: { tokenHash: digestLookupToken(token) },
     include: { user: true }
   });
 

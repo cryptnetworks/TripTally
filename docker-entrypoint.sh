@@ -71,6 +71,11 @@ if [ -n "${NEXTAUTH_SECRET:-}" ]; then
   export NEXTAUTH_SECRET
 fi
 
+if [ -n "${TOKEN_DIGEST_SECRET:-}" ]; then
+  TOKEN_DIGEST_SECRET="$(strip_quotes "$TOKEN_DIGEST_SECRET")"
+  export TOKEN_DIGEST_SECRET
+fi
+
 case "$DATABASE_URL" in
   file:*)
     DB_PATH="${DATABASE_URL#file:}"
@@ -106,6 +111,15 @@ case "${NEXTAUTH_SECRET:-}" in
       fatal "NEXTAUTH_SECRET must be set to a real random value. Generate one with: openssl rand -base64 32"
     fi
     log "warn" "startup.auth" "Using insecure NEXTAUTH_SECRET because TRIPTALLY_ALLOW_INSECURE_SECRET=1"
+    ;;
+esac
+
+case "${TOKEN_DIGEST_SECRET:-}" in
+  ""|"replace-with-a-long-random-secret"|"generate-a-long-random-secret-before-running-docker"|"paste-generated-secret-here")
+    if [ "${TRIPTALLY_ALLOW_INSECURE_SECRET:-}" != "1" ]; then
+      fatal "TOKEN_DIGEST_SECRET must be set to a real random value. Generate one with: openssl rand -base64 32"
+    fi
+    log "warn" "startup.auth" "Using insecure TOKEN_DIGEST_SECRET because TRIPTALLY_ALLOW_INSECURE_SECRET=1"
     ;;
 esac
 

@@ -6,22 +6,30 @@ import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { canIncludeExpenseInBalances } from "@/lib/trip-permissions";
 
 export default async function DashboardPage() {
   const user = await requireUser();
   const trips = await prisma.trip.findMany({
-    where: { ownerId: user.id },
+    where: { OR: [{ ownerId: user.id }, { members: { some: { userId: user.id } } }] },
     orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
     include: {
       participants: true,
-      expenses: true
+      expenses: {
+        where: {
+          OR: [{ status: { not: "draft" } }, { createdByUserId: user.id }]
+        }
+      }
     }
   });
 
   const totalParticipants = trips.reduce((sum, trip) => sum + trip.participants.length, 0);
   const totalExpenses = trips.reduce(
     (sum, trip) =>
-      sum + trip.expenses.reduce((inner, expense) => inner + Number(expense.amount), 0),
+      sum +
+      trip.expenses
+        .filter((expense) => canIncludeExpenseInBalances(expense.status))
+        .reduce((inner, expense) => inner + Number(expense.amount), 0),
     0
   );
 

@@ -3,6 +3,7 @@ import * as bcrypt from "bcryptjs";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { digestLookupToken } from "@/lib/token-digest";
 
 export const DEFAULT_RESET_EXPIRATION_MINUTES = 45;
 
@@ -37,7 +38,7 @@ export function generatePasswordResetToken() {
 }
 
 export function hashPasswordResetToken(token: string) {
-  return crypto.createHash("sha256").update(token).digest("hex");
+  return digestLookupToken(token);
 }
 
 export function passwordResetExpiresAt(now = new Date()) {

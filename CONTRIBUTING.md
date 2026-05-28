@@ -1,30 +1,80 @@
 # Contributing
 
-## Development
+## Setup
 
-Use the same commands locally that CI runs:
+Use Node.js 22.
 
 ```bash
 npm install
+cp .env.example .env
 npm run prisma:generate
-npm run lint
-npm run type-check
-npm test
-npm run build
+npm run prisma:migrate
+npm run dev
 ```
 
-For schema changes, add a Prisma migration and keep `prisma/schema.prisma`,
-`prisma/migrations`, and generated client usage in sync.
+Open `http://localhost:3000`.
 
-## Code Style
+## Branch Naming
+
+Use short, descriptive branch names:
+
+```text
+feature/oauth-provider-cleanup
+fix/mfa-login-regression
+docs/docker-deployment
+security/session-validation
+```
+
+## Coding Standards
 
 - Keep server actions grouped by domain under `lib/actions/`.
-- Keep calculation and business rules in `lib/`, not React components.
+- Keep calculation and business logic in `lib/`, not React components.
 - Prefer server components unless interactivity requires a client component.
 - Use Zod schemas from `lib/validation.ts` for incoming form data.
-- Do not log passwords, tokens, reset links in production, or raw request bodies.
+- Validate authorization server-side for protected and admin workflows.
+- Do not log passwords, tokens, reset links, MFA secrets, recovery codes, raw request bodies, or full session cookies.
+- Keep comments focused on non-obvious behavior.
 
-## Commits
+## Required Checks
+
+Run these before opening a pull request:
+
+```bash
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run test:e2e
+npm run build
+npm run security:audit
+```
+
+Playwright forces local callback URLs when it starts its own dev server, so local e2e tests do not inherit production `NEXTAUTH_URL` or `PUBLIC_APP_URL` values from `.env`.
+
+For Docker-impacting changes:
+
+```bash
+docker build -t triptally:ci .
+```
+
+## Prisma Changes
+
+For schema changes:
+
+1. Update `prisma/schema.prisma`.
+2. Add a migration under `prisma/migrations`.
+3. Run `npm run prisma:generate`.
+4. Add or update tests that cover the behavior.
+
+## Pull Request Checklist
+
+- Tests and type checks pass.
+- Security implications were considered.
+- New environment variables are documented in `.env.example`, `.env.docker.example`, README, and wiki docs as needed.
+- Migrations are included when schema changes require them.
+- Docker deployment impact is documented when relevant.
+
+## Commit Messages
 
 Use short imperative commit messages:
 
@@ -34,5 +84,4 @@ Fix Docker startup validation
 Refactor trip server actions
 ```
 
-Mention migrations, env var changes, and deployment changes in the commit body
-when they affect operators.
+Mention migrations, environment variables, and deployment changes in the commit body when they affect operators.

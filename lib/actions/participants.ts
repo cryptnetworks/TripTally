@@ -3,9 +3,28 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCurrentUserId } from "@/lib/actions/session";
+import { writeAuditLog } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { requireTripManager } from "@/lib/trip-access";
 import { formString, idSchema, participantSchema } from "@/lib/validation";
+
+async function findUserForParticipantEmail(email?: string) {
+  if (!email) return null;
+  return prisma.user.findUnique({
+    where: { email },
+    select: { id: true }
+  });
+}
+
+async function ensureParticipantMembership(tripId: string, userId?: string | null) {
+  if (!userId) return;
+  await prisma.tripMember.upsert({
+    where: { tripId_userId: { tripId, userId } },
+    update: {},
+    create: { tripId, userId, role: "member" }
+  });
+}
 
 export async function createParticipant(tripId: string, formData: FormData) {
   const userId = await requireCurrentUserId();
@@ -22,14 +41,28 @@ export async function createParticipant(tripId: string, formData: FormData) {
     redirect(`/trips/${tripId}?error=participant`);
   }
 
-  const trip = await prisma.trip.findFirst({ where: { id: tripId, ownerId: userId } });
-  if (!trip) redirect("/dashboard");
+  await requireTripManager(tripId, userId);
+  const linkedUser = await findUserForParticipantEmail(parsed.data.email);
 
-  await prisma.participant.create({
+  const participant = await prisma.participant.create({
     data: {
       name: parsed.data.name,
       email: parsed.data.email || null,
-      tripId
+      tripId,
+      userId: linkedUser?.id || null
+    }
+  });
+  await ensureParticipantMembership(tripId, linkedUser?.id);
+  await writeAuditLog({
+    actorUserId: userId,
+    tripId,
+    action: "participant.create",
+    targetType: "participant",
+    targetId: participant.id,
+    after: {
+      name: participant.name,
+      email: participant.email,
+      userId: participant.userId
     }
   });
 
@@ -54,16 +87,37 @@ export async function updateParticipant(tripId: string, participantId: string, f
     redirect(`/trips/${tripId}/participants/${participantId}/edit?error=invalid`);
   }
 
+  await requireTripManager(tripId, userId);
   const participant = await prisma.participant.findFirst({
-    where: { id: participantId, trip: { id: tripId, ownerId: userId } }
+    where: { id: participantId, tripId }
   });
   if (!participant) redirect(`/trips/${tripId}`);
+  const linkedUser = await findUserForParticipantEmail(parsed.data.email);
 
-  await prisma.participant.update({
+  const updated = await prisma.participant.update({
     where: { id: participantId },
     data: {
       name: parsed.data.name,
-      email: parsed.data.email || null
+      email: parsed.data.email || null,
+      userId: linkedUser?.id || null
+    }
+  });
+  await ensureParticipantMembership(tripId, linkedUser?.id);
+  await writeAuditLog({
+    actorUserId: userId,
+    tripId,
+    action: "participant.update",
+    targetType: "participant",
+    targetId: participant.id,
+    before: {
+      name: participant.name,
+      email: participant.email,
+      userId: participant.userId
+    },
+    after: {
+      name: updated.name,
+      email: updated.email,
+      userId: updated.userId
     }
   });
 
@@ -78,12 +132,22 @@ export async function deleteParticipant(tripId: string, participantId: string) {
   const parsedParticipantId = idSchema.safeParse(participantId);
   if (!parsedTripId.success || !parsedParticipantId.success) redirect("/dashboard");
 
-  await prisma.participant.deleteMany({
-    where: {
-      id: participantId,
-      trip: { id: tripId, ownerId: userId }
+  await requireTripManager(tripId, userId);
+  const participant = await prisma.participant.findFirst({ where: { id: participantId, tripId } });
+  if (!participant) redirect(`/trips/${tripId}`);
+  await writeAuditLog({
+    actorUserId: userId,
+    tripId,
+    action: "participant.delete",
+    targetType: "participant",
+    targetId: participantId,
+    before: {
+      name: participant.name,
+      email: participant.email,
+      userId: participant.userId
     }
   });
+  await prisma.participant.delete({ where: { id: participantId } });
   logger.info("participant.delete.success", { userId, tripId, participantId });
   revalidatePath(`/trips/${tripId}`);
   redirect(`/trips/${tripId}`);

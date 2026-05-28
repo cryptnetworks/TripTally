@@ -1,0 +1,80 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - npm
+    groups:
+      nextjs-stack:
+        patterns:
+          - next
+          - react
+          - react-dom
+          - eslint-config-next
+      auth-stack:
+        patterns:
+          - next-auth
+          - emailjs
+          - bcryptjs
+      prisma-stack:
+        patterns:
+          - prisma
+          - "@prisma/*"
+          - pg
+      testing-tools:
+        patterns:
+          - "@playwright/test"
+          - vitest
+          - tsx
+      lint-format-tools:
+        patterns:
+          - eslint
+          - prettier
+          - typescript
+          - postcss
+          - autoprefixer
+          - tailwindcss
+          - "@tailwindcss/*"
+          - "@types/*"
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+    open-pull-requests-limit: 8
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+    groups:
+      docker-images:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
+    open-pull-requests-limit: 5

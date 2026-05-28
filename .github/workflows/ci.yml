@@ -12,14 +12,15 @@ jobs:
       DATABASE_URL: file:./dev.db
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ci-secret-that-is-long-enough-for-tests
+      TOKEN_DIGEST_SECRET: ci-token-digest-secret-for-tests
       SMTP_ENABLED: "false"
       PASSWORD_RESET_TOKEN_MINUTES: "45"
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -43,7 +44,7 @@ jobs:
         run: npm run lint
 
       - name: Type check
-        run: npm run type-check
+        run: npm run typecheck
 
       - name: Unit and integration tests
         run: npm test

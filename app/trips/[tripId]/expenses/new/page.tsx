@@ -5,12 +5,20 @@ import { createExpense } from "@/lib/actions";
 import { categories } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { requireTripAccess } from "@/lib/trip-access";
+import {
+  allowedExpenseStatusesForRole,
+  canCreateTripExpense,
+  isTripManager
+} from "@/lib/trip-permissions";
 
 export default async function NewExpensePage({ params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await params;
   const user = await requireUser();
+  const resolved = await requireTripAccess(tripId, user.id);
+  if (!canCreateTripExpense(resolved.access.role)) notFound();
   const trip = await prisma.trip.findFirst({
-    where: { id: tripId, ownerId: user.id },
+    where: { id: tripId },
     include: { participants: { orderBy: { createdAt: "asc" } } }
   });
 
@@ -18,6 +26,13 @@ export default async function NewExpensePage({ params }: { params: Promise<{ tri
   if (trip.participants.length === 0) redirect(`/trips/${trip.id}?error=no-participants`);
 
   const action = createExpense.bind(null, trip.id);
+  const payerOptions = isTripManager(resolved.access.role)
+    ? trip.participants
+    : trip.participants.filter((participant) => participant.userId === user.id);
+  if (payerOptions.length === 0) redirect(`/trips/${trip.id}?error=participant-link-required`);
+  const statusOptions = allowedExpenseStatusesForRole(resolved.access.role).filter(
+    (status) => status === "draft" || status === "submitted"
+  );
 
   return (
     <PageShell>
@@ -88,7 +103,7 @@ export default async function NewExpensePage({ params }: { params: Promise<{ tri
                 name="payerId"
                 required
               >
-                {trip.participants.map((participant) => (
+                {payerOptions.map((participant) => (
                   <option key={participant.id} value={participant.id}>
                     {participant.name}
                   </option>
@@ -109,6 +124,18 @@ export default async function NewExpensePage({ params }: { params: Promise<{ tri
                 required
               />
             </div>
+          </div>
+          <div>
+            <label className="label" htmlFor="status">
+              Status
+            </label>
+            <select className="field" id="status" name="status" defaultValue="submitted">
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
           </div>
           <fieldset>
             <legend className="label">Shared by</legend>

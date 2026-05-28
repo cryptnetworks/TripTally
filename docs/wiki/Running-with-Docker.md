@@ -1,0 +1,84 @@
+# Running with Docker
+
+TripTally is intended to run as a Docker container in production. The container starts as a non-root user, validates configuration, generates Prisma Client, applies Prisma migrations, and starts the Next.js production server.
+
+## Pull the Image
+
+```bash
+docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+```
+
+## Prepare Environment
+
+```bash
+cp .env.docker.example .env
+openssl rand -base64 32
+openssl rand -base64 32
+openssl rand -base64 32
+```
+
+Use separate generated values for `NEXTAUTH_SECRET`, `TOKEN_DIGEST_SECRET`, and `AUTH_CONFIG_ENCRYPTION_KEY`.
+
+Minimum local Docker values:
+
+```env
+NODE_ENV=production
+DATABASE_URL=file:/app/data/triptally.db
+NEXTAUTH_URL=http://localhost:3000
+PUBLIC_APP_URL=http://localhost:3000
+NEXTAUTH_SECRET=paste-generated-secret-here
+TOKEN_DIGEST_SECRET=paste-generated-secret-here
+AUTH_CONFIG_ENCRYPTION_KEY=paste-generated-secret-here
+SMTP_ENABLED=false
+```
+
+## Run a Single Container
+
+```bash
+docker volume create triptally_data
+
+docker run --name triptally \
+  -p 3000:3000 \
+  -v triptally_data:/app/data \
+  --env-file .env \
+  ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+```
+
+Open `http://localhost:3000`.
+
+## Healthcheck
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+The Docker image also defines a healthcheck that calls `/api/health` every 30 seconds.
+
+## Run with Docker Compose
+
+The included Compose file builds the local Dockerfile by default and runs TripTally privately on the Docker network:
+
+```bash
+docker compose up -d --build triptally
+```
+
+Compose mounts the `triptally_data` volume at `/app/data`.
+
+To use the pinned GHCR image instead of building locally, override the service image:
+
+```yaml
+services:
+  triptally:
+    image: ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+    build: null
+```
+
+## Data Persistence
+
+SQLite lives at:
+
+```text
+/app/data/triptally.db
+```
+
+Always mount `/app/data` to a persistent Docker volume.

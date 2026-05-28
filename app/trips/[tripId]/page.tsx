@@ -13,37 +13,76 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { requireTripAccess } from "@/lib/trip-access";
+import {
+  canCreateTripExpense,
+  canEditExpense,
+  canIncludeExpenseInBalances,
+  canViewExpense,
+  isTripManager
+} from "@/lib/trip-permissions";
 
-export default async function TripDetailPage({ params }: { params: Promise<{ tripId: string }> }) {
+export default async function TripDetailPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ tripId: string }>;
+  searchParams: Promise<{ filter?: string }>;
+}) {
   const { tripId } = await params;
+  const { filter = "all" } = await searchParams;
   const user = await requireUser();
+  const resolved = await requireTripAccess(tripId, user.id);
+  const role = resolved.access.role;
+  const canManageTrip = isTripManager(role);
+  const canAddExpense = canCreateTripExpense(role);
   const trip = await prisma.trip.findFirst({
-    where: { id: tripId, ownerId: user.id },
+    where: { id: tripId },
     include: {
-      participants: { orderBy: { createdAt: "asc" } },
+      participants: { orderBy: { createdAt: "asc" }, include: { user: true } },
       expenses: {
         orderBy: { date: "desc" },
         include: {
           payer: true,
+          createdBy: { select: { username: true, email: true } },
           shares: { include: { participant: true } }
         }
-      }
+      },
+      auditLogs: { orderBy: { createdAt: "desc" }, take: 8 }
     }
   });
 
   if (!trip) notFound();
 
-  const { balances, settlements } = calculateBalances(trip.participants, trip.expenses);
+  const visibleExpenses = trip.expenses.filter((expense) => canViewExpense(role, user.id, expense));
+  const filteredExpenses = visibleExpenses.filter((expense) => {
+    if (filter === "my") return expense.createdByUserId === user.id;
+    if (filter === "needs-review") return ["draft", "submitted"].includes(expense.status);
+    if (filter === "disputed") return expense.status === "disputed";
+    if (filter === "unsettled") return expense.status !== "draft" && expense.status !== "settled";
+    return true;
+  });
+  const balanceExpenses = visibleExpenses.filter((expense) =>
+    canIncludeExpenseInBalances(expense.status)
+  );
+  const { balances, settlements } = calculateBalances(trip.participants, balanceExpenses);
   logger.info("settlement.calculate.success", {
     userId: user.id,
     tripId: trip.id,
     participants: trip.participants.length,
-    expenses: trip.expenses.length,
+    expenses: balanceExpenses.length,
     settlements: settlements.length
   });
-  const totalCost = trip.expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const totalCost = balanceExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const addParticipant = createParticipant.bind(null, trip.id);
   const removeTrip = deleteTrip.bind(null, trip.id);
+  const filters = [
+    ["all", "All expenses"],
+    ["my", "My expenses"],
+    ["needs-review", "Needs review"],
+    ["disputed", "Disputed"],
+    ["unsettled", "Unsettled"]
+  ];
 
   return (
     <PageShell>
@@ -54,21 +93,31 @@ export default async function TripDetailPage({ params }: { params: Promise<{ tri
       />
 
       <div className="mb-5 flex flex-col gap-2 sm:flex-row">
-        <Link
-          className="btn-primary"
-          data-testid="add-expense"
-          href={`/trips/${trip.id}/expenses/new`}
-        >
-          Add Expense
-        </Link>
-        <Link className="btn-secondary" data-testid="edit-trip" href={`/trips/${trip.id}/edit`}>
-          Edit Trip
-        </Link>
-        <form action={removeTrip}>
-          <button className="btn-danger w-full sm:w-auto" data-testid="delete-trip" type="submit">
-            Delete Trip
-          </button>
-        </form>
+        {canAddExpense ? (
+          <Link
+            className="btn-primary"
+            data-testid="add-expense"
+            href={`/trips/${trip.id}/expenses/new`}
+          >
+            Add Expense
+          </Link>
+        ) : null}
+        {canManageTrip ? (
+          <>
+            <Link className="btn-secondary" data-testid="edit-trip" href={`/trips/${trip.id}/edit`}>
+              Edit Trip
+            </Link>
+            <form action={removeTrip}>
+              <button
+                className="btn-danger w-full sm:w-auto"
+                data-testid="delete-trip"
+                type="submit"
+              >
+                Delete Trip
+              </button>
+            </form>
+          </>
+        ) : null}
       </div>
 
       <section className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -82,7 +131,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ tri
         </div>
         <div className="card p-4">
           <p className="text-sm text-muted">Expenses</p>
-          <p className="mt-1 text-2xl font-bold">{trip.expenses.length}</p>
+          <p className="mt-1 text-2xl font-bold">{balanceExpenses.length}</p>
         </div>
         <div className="card p-4">
           <p className="text-sm text-muted">Balances</p>
@@ -99,31 +148,33 @@ export default async function TripDetailPage({ params }: { params: Promise<{ tri
                 {trip.participants.length} total
               </span>
             </div>
-            <form
-              className="mb-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
-              action={addParticipant}
-              data-testid="participant-form"
-            >
-              <input
-                className="field"
-                data-testid="participant-name"
-                name="name"
-                placeholder="Name"
-                maxLength={120}
-                required
-              />
-              <input
-                className="field"
-                data-testid="participant-email"
-                name="email"
-                placeholder="Email optional"
-                type="email"
-                maxLength={120}
-              />
-              <button className="btn-primary" data-testid="participant-submit" type="submit">
-                Add
-              </button>
-            </form>
+            {canManageTrip ? (
+              <form
+                className="mb-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
+                action={addParticipant}
+                data-testid="participant-form"
+              >
+                <input
+                  className="field"
+                  data-testid="participant-name"
+                  name="name"
+                  placeholder="Name"
+                  maxLength={120}
+                  required
+                />
+                <input
+                  className="field"
+                  data-testid="participant-email"
+                  name="email"
+                  placeholder="Email optional"
+                  type="email"
+                  maxLength={120}
+                />
+                <button className="btn-primary" data-testid="participant-submit" type="submit">
+                  Add
+                </button>
+              </form>
+            ) : null}
             {trip.participants.length === 0 ? (
               <p className="text-sm text-muted">Add travelers before recording expenses.</p>
             ) : (
@@ -140,21 +191,24 @@ export default async function TripDetailPage({ params }: { params: Promise<{ tri
                         <p className="truncate font-semibold text-ink">{participant.name}</p>
                         <p className="truncate text-sm text-muted">
                           {participant.email || "No email provided"}
+                          {participant.userId ? " - linked app user" : ""}
                         </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Link
-                          className="btn-secondary min-h-9 px-3 py-1.5"
-                          data-testid="participant-edit"
-                          href={`/trips/${trip.id}/participants/${participant.id}/edit`}
-                        >
-                          Edit
-                        </Link>
-                        <DeleteButton
-                          action={removeParticipant}
-                          label={`Delete ${participant.name}`}
-                        />
-                      </div>
+                      {canManageTrip ? (
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Link
+                            className="btn-secondary min-h-9 px-3 py-1.5"
+                            data-testid="participant-edit"
+                            href={`/trips/${trip.id}/participants/${participant.id}/edit`}
+                          >
+                            Edit
+                          </Link>
+                          <DeleteButton
+                            action={removeParticipant}
+                            label={`Delete ${participant.name}`}
+                          />
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -165,15 +219,32 @@ export default async function TripDetailPage({ params }: { params: Promise<{ tri
           <section className="card p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-ink">Expense history</h2>
-              <Link
-                className="text-sm font-semibold text-ocean"
-                data-testid="add-expense-inline"
-                href={`/trips/${trip.id}/expenses/new`}
-              >
-                Add expense
-              </Link>
+              {canAddExpense ? (
+                <Link
+                  className="text-sm font-semibold text-ocean"
+                  data-testid="add-expense-inline"
+                  href={`/trips/${trip.id}/expenses/new`}
+                >
+                  Add expense
+                </Link>
+              ) : null}
             </div>
-            {trip.expenses.length === 0 ? (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {filters.map(([value, label]) => (
+                <Link
+                  key={value}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                    filter === value
+                      ? "border-ocean bg-ocean text-white"
+                      : "border-line bg-surface text-muted"
+                  }`}
+                  href={`/trips/${trip.id}?filter=${value}`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+            {filteredExpenses.length === 0 ? (
               <EmptyState
                 title="No expenses yet"
                 description="Add an expense after you have at least one participant."
@@ -182,8 +253,13 @@ export default async function TripDetailPage({ params }: { params: Promise<{ tri
               />
             ) : (
               <div className="grid gap-3">
-                {trip.expenses.map((expense) => (
-                  <ExpenseCard key={expense.id} expense={expense} tripId={trip.id} />
+                {filteredExpenses.map((expense) => (
+                  <ExpenseCard
+                    key={expense.id}
+                    expense={expense}
+                    tripId={trip.id}
+                    canEdit={canEditExpense(role, user.id, expense)}
+                  />
                 ))}
               </div>
             )}
@@ -208,6 +284,23 @@ export default async function TripDetailPage({ params }: { params: Promise<{ tri
           <section className="card p-4">
             <h2 className="mb-4 text-lg font-semibold text-ink">Settlement suggestions</h2>
             <SettlementList settlements={settlements} />
+          </section>
+          <section className="card p-4">
+            <h2 className="mb-4 text-lg font-semibold text-ink">Trip activity</h2>
+            {trip.auditLogs.length === 0 ? (
+              <p className="text-sm text-muted">
+                Expense and participant changes will appear here.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {trip.auditLogs.map((entry) => (
+                  <div key={entry.id} className="rounded-lg border border-line p-3">
+                    <p className="text-sm font-semibold text-ink">{entry.action}</p>
+                    <p className="text-xs text-muted">{formatDate(entry.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </aside>
       </div>
