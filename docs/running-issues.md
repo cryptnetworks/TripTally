@@ -99,3 +99,13 @@
 - Fix applied: Added external payment methods, local receipt storage and parser review, itemized receipt split helpers, server-side item lookup with mock provider and cache, Discord signed interactions and linking tokens, and docs for configuration/security.
 - Verification commands: `npx prisma validate`, `npx prisma migrate deploy`, `npm run format:check`, `npm run typecheck`, `npm test`.
 - Status: In progress locally on `feature/local-major-expansion`; not pushed.
+
+## Issue 11: CodeQL workflow and token digest findings plus picomatch Trivy finding
+
+- Date encountered: 2026-05-28
+- Error summary: CodeQL reported missing workflow permissions in CI and continued to flag one-time token HMAC digests as insufficient password hashing. Trivy also reported vulnerable `picomatch@4.0.3`.
+- Root cause: The CI workflow did not declare explicit least-privilege permissions. CodeQL treats password reset/OAuth/Discord one-time token digest flows like user password hashing even though the tokens are high-entropy random lookup secrets keyed with HMAC-SHA-256. Trivy was interpreting the unresolved package range as vulnerable despite the installed tree resolving patched versions.
+- Files changed: `.github/workflows/ci.yml`, `lib/token-digest.ts`, `package.json`, `package-lock.json`, and this log.
+- Fix applied: Added `permissions: contents: read` to CI, documented the CodeQL false positive at the HMAC line with a query-specific suppression, and added direct `picomatch@4.0.4` so the installed root package is explicitly patched.
+- Verification commands: `npm ls picomatch --all`, `npm run security:audit`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`.
+- Status: Fixed locally; not pushed.

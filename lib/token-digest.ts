@@ -15,6 +15,9 @@ function tokenDigestSecret() {
 }
 
 export function digestLookupToken(token: string) {
+  // This stores high-entropy random one-time lookup tokens as keyed HMAC digests.
+  // User passwords still use bcrypt; these tokens are not user-memorable secrets.
+  // codeql[js/insufficient-password-hash]
   return crypto.createHmac("sha256", tokenDigestSecret()).update(token).digest("hex");
 }
 
