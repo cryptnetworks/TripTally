@@ -69,3 +69,13 @@
 - Fix applied: Ran `npm update picomatch` and verified the installed tree resolves to patched versions: `picomatch@2.3.2` for the micromatch branch and `picomatch@4.0.4` for Vite/Vitest branches.
 - Verification commands: `npm ls picomatch --all`, `npm audit --audit-level=high`, `npm audit --json`, `npm run security:scan`, `docker build -t triptally:latest .`.
 - Status: Fixed.
+
+## Issue 8: Remaining Dependabot major updates review
+
+- Date encountered: 2026-05-28
+- Error summary: Dependabot opened major-version PRs for ESLint 10, GitHub Actions, and Node 26 Alpine. A Nodemailer 8 PR was also referenced, but Nodemailer had already been removed from the project.
+- Root cause: Dependabot grouped safe action major updates with ecosystem updates that still require compatibility confirmation. ESLint 10 is newer than peer ranges declared by the Next.js ESLint plugin chain, and Node 26 is currently a Current release rather than the production LTS runtime used by the app.
+- Files changed: `.github/workflows/docker-image.yml`, `.github/workflows/release.yml`, `.github/dependabot.yml`, `README.md`, `SECURITY.md`, `docs/wiki/Repository-Automation.md`, and `docs/wiki/Contributing.md`.
+- Fix applied: Accepted the GitHub Actions group update for Docker login, Docker metadata, Docker build/push, and release creation. Deferred ESLint 10 with a Dependabot major ignore because the compatibility test produced peer dependency warnings from `eslint-plugin-import`, `eslint-plugin-jsx-a11y`, and `eslint-plugin-react`. Deferred Node 26 Alpine with a Dependabot major ignore while production remains on Node 22 Alpine LTS. Documented the stale Nodemailer PR as replaced by EmailJS.
+- Verification commands: `npm install eslint@10.4.0 --package-lock-only --no-audit --no-fund`, `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run build`, `docker build -t triptally:latest .`, `docker compose build triptally`, `npm run security:audit`, `npm run security:scan`.
+- Status: Fixed in repository configuration; pending hosted Actions confirmation for updated action versions.
