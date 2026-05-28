@@ -10,7 +10,7 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, actionLabel, actionHref }: EmptyStateProps) {
   return (
-    <div className="card flex min-h-56 flex-col items-center justify-center bg-white/95 px-5 py-10 text-center transition">
+    <div className="card flex min-h-56 flex-col items-center justify-center px-5 py-10 text-center transition">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-brand-soft p-2 shadow-soft">
         <Image
           src="/branding/logo-icon.png"

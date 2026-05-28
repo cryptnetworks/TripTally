@@ -136,7 +136,7 @@ export default async function EditExpensePage({
               {trip.participants.map((participant) => (
                 <label
                   key={participant.id}
-                  className="flex min-h-11 items-center gap-3 rounded-lg border border-line bg-white px-3 py-2 text-sm"
+                  className="flex min-h-11 items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2 text-sm"
                 >
                   <input
                     data-testid="expense-share-checkbox"

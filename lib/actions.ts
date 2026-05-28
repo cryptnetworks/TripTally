@@ -1,4 +1,10 @@
-export { registerUser, requestPasswordReset, resetPassword } from "@/lib/actions/auth";
+export {
+  registerUser,
+  requestPasswordReset,
+  resetPassword,
+  updateAccountPassword,
+  updateAccountProfile
+} from "@/lib/actions/auth";
 export { createTrip, deleteTrip, updateTrip } from "@/lib/actions/trips";
 export {
   createParticipant,

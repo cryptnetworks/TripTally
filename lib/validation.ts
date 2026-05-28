@@ -52,6 +52,22 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"]
   });
 
+export const accountProfileSchema = z.object({
+  username: z.string().trim().min(3).max(80),
+  email: z.email().trim().toLowerCase().max(120)
+});
+
+export const accountPasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1).max(128),
+    password: z.string().min(8).max(128),
+    confirmPassword: z.string().min(8).max(128)
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match.",
+    path: ["confirmPassword"]
+  });
+
 export const tripSchema = z
   .object({
     name: z.string().trim().min(1).max(140),

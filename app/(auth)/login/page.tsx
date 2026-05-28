@@ -5,7 +5,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ registered?: string; reset?: string }>;
+  searchParams: Promise<{ registered?: string; reset?: string; logout?: string }>;
 }) {
   const query = await searchParams;
 
@@ -27,6 +27,11 @@ export default async function LoginPage({
         {query.reset ? (
           <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
             Password updated. Login with your new password.
+          </p>
+        ) : null}
+        {query.logout ? (
+          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
+            You have been logged out.
           </p>
         ) : null}
         <div className="mt-6">
