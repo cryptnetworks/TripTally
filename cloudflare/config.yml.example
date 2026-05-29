@@ -1,7 +1,7 @@
-tunnel: triptally
+tunnel: seddleup
 credentials-file: /etc/cloudflared/credentials.json
 
 ingress:
   - hostname: app.example.com
-    service: http://triptally:3000
+    service: http://seddleup:3000
   - service: http_status:404

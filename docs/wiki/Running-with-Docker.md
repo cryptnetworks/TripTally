@@ -23,7 +23,7 @@ Minimum local Docker values:
 
 ```env
 NODE_ENV=production
-DATABASE_URL=file:/app/data/triptally.db
+DATABASE_URL=file:/app/data/seddleup.db
 NEXTAUTH_URL=http://localhost:3000
 PUBLIC_APP_URL=http://localhost:3000
 NEXTAUTH_SECRET=paste-generated-secret-here
@@ -35,11 +35,11 @@ SMTP_ENABLED=false
 ## Run a Single Container
 
 ```bash
-docker volume create triptally_data
+docker volume create seddleup_data
 
-docker run --name triptally \
+docker run --name seddleup \
   -p 3000:3000 \
-  -v triptally_data:/app/data \
+  -v seddleup_data:/app/data \
   --env-file .env \
   ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
@@ -59,16 +59,21 @@ The Docker image also defines a healthcheck that calls `/api/health` every 30 se
 The included Compose file builds the local Dockerfile by default and runs SeddleUp privately on the Docker network:
 
 ```bash
-docker compose up -d --build triptally
+docker compose up -d --build seddleup
 ```
 
-Compose mounts the `triptally_data` volume at `/app/data`.
+Compose mounts the `seddleup_data` volume at `/app/data`.
+
+Existing deployments that used the old `triptally_data` volume should back up
+the old volume before switching names. On startup, SeddleUp migrates
+`/app/data/triptally.db` to `/app/data/seddleup.db` when the old file exists in
+the mounted volume and the new file is absent.
 
 To use the pinned GHCR image instead of building locally, override the service image:
 
 ```yaml
 services:
-  triptally:
+  seddleup:
     image: ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
     build: null
 ```
@@ -78,7 +83,7 @@ services:
 SQLite lives at:
 
 ```text
-/app/data/triptally.db
+/app/data/seddleup.db
 ```
 
 Always mount `/app/data` to a persistent Docker volume.

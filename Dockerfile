@@ -13,7 +13,7 @@ RUN npm ci --no-audit --no-fund --loglevel=error
 # generated here so the production image always contains a matching client.
 FROM node:22-alpine AS builder
 WORKDIR /app
-ENV DATABASE_URL=file:/app/data/triptally.db
+ENV DATABASE_URL=file:/app/data/seddleup.db
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 RUN apk add --no-cache openssl
@@ -31,8 +31,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV TRIPTALLY_DOCKER=1
-ENV DATABASE_URL=file:/app/data/triptally.db
+ENV SEDDLEUP_DOCKER=1
+ENV DATABASE_URL=file:/app/data/seddleup.db
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 

@@ -55,7 +55,7 @@ log "info" "startup.begin" "Preparing SeddleUp container"
 log "info" "startup.env" "NODE_ENV=${NODE_ENV:-production}"
 
 if [ -z "${DATABASE_URL:-}" ]; then
-  export DATABASE_URL="file:/app/data/triptally.db"
+  export DATABASE_URL="file:/app/data/seddleup.db"
 else
   DATABASE_URL="$(strip_quotes "$DATABASE_URL")"
   export DATABASE_URL
@@ -83,17 +83,21 @@ case "$DATABASE_URL" in
       /*)
         ;;
       *)
-        if [ "${TRIPTALLY_DOCKER:-}" = "1" ]; then
-          DB_PATH="${TRIPTALLY_SQLITE_PATH:-/app/data/triptally.db}"
+        if [ "${SEDDLEUP_DOCKER:-${TRIPTALLY_DOCKER:-}}" = "1" ]; then
+          DB_PATH="${SEDDLEUP_SQLITE_PATH:-${TRIPTALLY_SQLITE_PATH:-/app/data/seddleup.db}}"
           export DATABASE_URL="file:${DB_PATH}"
           log "warn" "startup.sqlite" "Rewriting relative SQLite DATABASE_URL to ${DATABASE_URL} for Docker persistence"
         else
-          fatal "SQLite DATABASE_URL must use an absolute path in production containers. Use file:/app/data/triptally.db."
+          fatal "SQLite DATABASE_URL must use an absolute path in production containers. Use file:/app/data/seddleup.db."
         fi
         ;;
     esac
     DB_DIR="$(dirname "$DB_PATH")"
     mkdir -p "$DB_DIR"
+    if [ "$DB_PATH" = "/app/data/seddleup.db" ] && [ ! -e "$DB_PATH" ] && [ -e "/app/data/triptally.db" ]; then
+      mv /app/data/triptally.db "$DB_PATH"
+      log "info" "startup.sqlite" "Migrated legacy SQLite database path from /app/data/triptally.db to $DB_PATH"
+    fi
     touch "$DB_DIR/.write-test" 2>/dev/null || fatal "SQLite directory is not writable: $DB_DIR"
     rm -f "$DB_DIR/.write-test"
     log "info" "startup.sqlite" "Using SQLite database at $DB_PATH"
@@ -107,19 +111,19 @@ fi
 
 case "${NEXTAUTH_SECRET:-}" in
   ""|"replace-with-a-long-random-secret"|"generate-a-long-random-secret-before-running-docker"|"paste-generated-secret-here")
-    if [ "${TRIPTALLY_ALLOW_INSECURE_SECRET:-}" != "1" ]; then
+    if [ "${SEDDLEUP_ALLOW_INSECURE_SECRET:-${TRIPTALLY_ALLOW_INSECURE_SECRET:-}}" != "1" ]; then
       fatal "NEXTAUTH_SECRET must be set to a real random value. Generate one with: openssl rand -base64 32"
     fi
-    log "warn" "startup.auth" "Using insecure NEXTAUTH_SECRET because TRIPTALLY_ALLOW_INSECURE_SECRET=1"
+    log "warn" "startup.auth" "Using insecure NEXTAUTH_SECRET because insecure secret override is enabled"
     ;;
 esac
 
 case "${TOKEN_DIGEST_SECRET:-}" in
   ""|"replace-with-a-long-random-secret"|"generate-a-long-random-secret-before-running-docker"|"paste-generated-secret-here")
-    if [ "${TRIPTALLY_ALLOW_INSECURE_SECRET:-}" != "1" ]; then
+    if [ "${SEDDLEUP_ALLOW_INSECURE_SECRET:-${TRIPTALLY_ALLOW_INSECURE_SECRET:-}}" != "1" ]; then
       fatal "TOKEN_DIGEST_SECRET must be set to a real random value. Generate one with: openssl rand -base64 32"
     fi
-    log "warn" "startup.auth" "Using insecure TOKEN_DIGEST_SECRET because TRIPTALLY_ALLOW_INSECURE_SECRET=1"
+    log "warn" "startup.auth" "Using insecure TOKEN_DIGEST_SECRET because insecure secret override is enabled"
     ;;
 esac
 
