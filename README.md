@@ -27,7 +27,7 @@ Screenshots are not committed yet. Add current dashboard, trip detail, account, 
 Pinned GHCR image:
 
 ```bash
-docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+docker pull ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
 
 ## Required Configuration
@@ -87,7 +87,7 @@ docker run --name triptally \
   -p 3000:3000 \
   -v triptally_data:/app/data \
   --env-file .env \
-  ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+  ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
 
 Open `http://localhost:3000`.
@@ -119,7 +119,7 @@ To use the pinned GHCR image with Compose instead of building locally, either ed
 ```yaml
 services:
   triptally:
-    image: ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+    image: ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
     build: null
 ```
 
@@ -410,13 +410,13 @@ docker start triptally
 Pull the new image, recreate the container, and keep the same volume:
 
 ```bash
-docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+docker pull ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 docker rm -f triptally
 docker run --name triptally \
   -p 3000:3000 \
   -v triptally_data:/app/data \
   --env-file .env \
-  ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+  ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
 
 The startup entrypoint applies database migrations automatically.
