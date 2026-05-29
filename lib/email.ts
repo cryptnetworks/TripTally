@@ -85,7 +85,7 @@ export async function sendPasswordResetEmail({ to, resetUrl, expiresInMinutes }:
   }
 
   const from = process.env.SMTP_FROM as string;
-  const appName = process.env.EMAIL_APP_NAME || "Trip Tally";
+  const appName = process.env.EMAIL_APP_NAME || "SeddleUp";
 
   try {
     await sendSmtpEmail({
@@ -133,7 +133,7 @@ export async function sendEmailVerificationEmail({
   }
 
   const from = process.env.SMTP_FROM as string;
-  const appName = process.env.EMAIL_APP_NAME || "Trip Tally";
+  const appName = process.env.EMAIL_APP_NAME || "SeddleUp";
 
   try {
     await sendSmtpEmail({
@@ -177,7 +177,7 @@ export async function sendTwoFactorEmail({ to, code, expiresInMinutes }: TwoFact
   }
 
   const from = process.env.SMTP_FROM as string;
-  const appName = process.env.EMAIL_APP_NAME || "Trip Tally";
+  const appName = process.env.EMAIL_APP_NAME || "SeddleUp";
 
   try {
     await sendSmtpEmail({
@@ -219,22 +219,22 @@ function brandedEmailTemplate(input: {
   footer: string;
 }) {
   const action = input.ctaUrl
-    ? `<a href="${input.ctaUrl}" style="display:block;text-align:center;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:10px;padding:14px 18px;font-size:16px;font-weight:700;">${input.ctaLabel}</a>
-       <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#657386;">If the button does not work, copy and paste this link into your browser:<br><span style="word-break:break-all;color:#0f766e;">${input.ctaUrl}</span></p>`
-    : `<div style="margin:20px 0;text-align:center;font-size:32px;letter-spacing:.24em;font-weight:800;color:#18212f;">${input.code}</div>`;
+    ? `<a href="${input.ctaUrl}" style="display:block;text-align:center;background:#2563EB;color:#ffffff;text-decoration:none;border-radius:10px;padding:14px 18px;font-size:16px;font-weight:700;">${input.ctaLabel}</a>
+       <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#64748B;">If the button does not work, copy and paste this link into your browser:<br><span style="word-break:break-all;color:#2563EB;">${input.ctaUrl}</span></p>`
+    : `<div style="margin:20px 0;text-align:center;font-size:32px;letter-spacing:.24em;font-weight:800;color:#111827;">${input.code}</div>`;
 
   return `
-    <div style="margin:0;padding:0;background:#f7f9fb;font-family:Arial,sans-serif;color:#18212f;">
+    <div style="margin:0;padding:0;background:#F8FAFC;font-family:Arial,sans-serif;color:#111827;">
       <div style="max-width:540px;margin:0 auto;padding:28px 16px;">
-        <div style="background:#ffffff;border:1px solid #dbe3ec;border-radius:14px;padding:26px;">
-          <div style="margin:0 0 18px;padding:12px;border-radius:12px;background:#eef8f6;text-align:center;">
-            <strong style="font-size:22px;color:#18212f;">${input.appName}</strong>
+        <div style="background:#ffffff;border:1px solid #CBD5E1;border-radius:14px;padding:26px;">
+          <div style="margin:0 0 18px;padding:12px;border-radius:12px;background:#DBEAFE;text-align:center;">
+            <strong style="font-size:22px;color:#0F172A;">${input.appName}</strong>
           </div>
-          <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;">Travel costs, settled clearly</p>
-          <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;color:#18212f;">${input.title}</h1>
-          <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#657386;">${input.intro}</p>
+          <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2563EB;">Travel together. Settle up easily.</p>
+          <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;color:#111827;">${input.title}</h1>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#64748B;">${input.intro}</p>
           ${action}
-          <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#657386;">${input.footer}</p>
+          <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#64748B;">${input.footer}</p>
         </div>
       </div>
     </div>

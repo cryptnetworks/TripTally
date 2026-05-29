@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       discordUsername: discordUser?.username,
       request
     });
-    return reply(`Open this private link while signed in to TripTally: ${url}`);
+    return reply(`Open this private link while signed in to SeddleUp: ${url}`);
   }
 
   const account = await linkedUser(discordUserId);

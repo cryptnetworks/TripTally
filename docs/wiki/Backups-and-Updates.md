@@ -12,7 +12,7 @@ docker run --rm \
 
 ## SQLite Restore
 
-Stop TripTally before restoring:
+Stop SeddleUp before restoring:
 
 ```bash
 docker stop triptally

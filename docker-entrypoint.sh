@@ -51,7 +51,7 @@ retry() {
   done
 }
 
-log "info" "startup.begin" "Preparing TripTally container"
+log "info" "startup.begin" "Preparing SeddleUp container"
 log "info" "startup.env" "NODE_ENV=${NODE_ENV:-production}"
 
 if [ -z "${DATABASE_URL:-}" ]; then
@@ -127,5 +127,5 @@ retry "Prisma Client generation" 2 2 npx prisma generate
 retry "Config validation" 2 2 npm run validate:config
 retry "Prisma migrations" 5 3 npx prisma migrate deploy
 
-log "info" "startup.ready" "Starting TripTally"
+log "info" "startup.ready" "Starting SeddleUp"
 exec "$@"

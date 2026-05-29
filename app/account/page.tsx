@@ -186,7 +186,7 @@ export default async function AccountPage({
         <section className="card p-5 lg:col-span-2">
           <h2 className="text-xl font-semibold text-ink">Settlement payment methods</h2>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Add external payment links or handles for trip members. TripTally never processes
+            Add external payment links or handles for trip members. SeddleUp never processes
             payments or stores payment credentials.
           </p>
           {paymentStatus ? (

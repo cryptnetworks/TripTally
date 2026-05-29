@@ -13,11 +13,11 @@ export function EmptyState({ title, description, actionLabel, actionHref }: Empt
     <div className="card flex min-h-56 flex-col items-center justify-center px-5 py-10 text-center transition">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-brand-soft p-2 shadow-soft">
         <Image
-          src="/branding/logo-icon.png"
+          src="/mark-512.png"
           alt=""
           width={512}
           height={512}
-          className="h-full w-full rounded-lg object-cover"
+          className="h-full w-full object-contain"
           sizes="64px"
         />
       </div>

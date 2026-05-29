@@ -50,10 +50,10 @@ export default async function HomePage() {
             Travel expenses, handled clearly
           </p>
           <h1 className="max-w-3xl text-4xl font-bold leading-tight text-ink sm:text-5xl md:text-6xl">
-            Track travel expenses and split trip costs easily.
+            Travel together. Settle up easily.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted md:text-lg">
-            Trip Tally keeps group spending, participants, balances, and settlements organized from
+            SeddleUp keeps group spending, participants, balances, and settlements organized from
             the first booking to the final reimbursement.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">

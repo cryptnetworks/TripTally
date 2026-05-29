@@ -63,5 +63,5 @@ docker compose --profile nginx up -d
 Example cron:
 
 ```cron
-17 3,15 * * * cd /path/to/TripTally && ./scripts/renew-certs.sh >> /var/log/triptally-certbot.log 2>&1
+17 3,15 * * * cd /path/to/SeddleUp && ./scripts/renew-certs.sh >> /var/log/triptally-certbot.log 2>&1
 ```

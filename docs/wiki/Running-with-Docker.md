@@ -1,6 +1,6 @@
 # Running with Docker
 
-TripTally is intended to run as a Docker container in production. The container starts as a non-root user, validates configuration, generates Prisma Client, applies Prisma migrations, and starts the Next.js production server.
+SeddleUp is intended to run as a Docker container in production. The container starts as a non-root user, validates configuration, generates Prisma Client, applies Prisma migrations, and starts the Next.js production server.
 
 ## Pull the Image
 
@@ -56,7 +56,7 @@ The Docker image also defines a healthcheck that calls `/api/health` every 30 se
 
 ## Run with Docker Compose
 
-The included Compose file builds the local Dockerfile by default and runs TripTally privately on the Docker network:
+The included Compose file builds the local Dockerfile by default and runs SeddleUp privately on the Docker network:
 
 ```bash
 docker compose up -d --build triptally

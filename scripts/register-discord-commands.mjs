@@ -7,10 +7,10 @@ if (!token || !applicationId) {
 }
 
 const commands = [
-  { name: "link", description: "Link your Discord account to TripTally" },
+  { name: "link", description: "Link your Discord account to SeddleUp" },
   {
     name: "trip",
-    description: "Manage TripTally trips",
+    description: "Manage SeddleUp trips",
     options: [
       {
         type: 1,

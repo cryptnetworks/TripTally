@@ -1,6 +1,6 @@
 # Configuration
 
-TripTally reads configuration from environment variables. Docker deployments should start from `.env.docker.example`.
+SeddleUp reads configuration from environment variables. Docker deployments should start from `.env.docker.example`.
 
 ## Required Values
 
@@ -74,7 +74,7 @@ SMTP_SECURE=false
 SMTP_USER=your-smtp-username
 SMTP_PASSWORD=your-smtp-password
 SMTP_FROM=no-reply@app.example.com
-EMAIL_APP_NAME="Trip Tally"
+EMAIL_APP_NAME="SeddleUp"
 PASSWORD_RESET_TOKEN_MINUTES=45
 ```
 

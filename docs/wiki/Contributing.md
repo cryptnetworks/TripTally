@@ -27,7 +27,7 @@ npm test
 npm run test:e2e
 npm run security:audit
 npm run build
-docker build -t triptally:ci .
+docker build -t seddleup:ci .
 ```
 
 The Playwright configuration forces local `NEXTAUTH_URL` and `PUBLIC_APP_URL` values when it starts its own dev server. This keeps local e2e runs from inheriting production callback URLs from `.env`.

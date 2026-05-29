@@ -74,7 +74,7 @@ function Start-NextApp {
   Ensure-PrismaClient
   Ensure-Database
 
-  Write-Info "Starting TripTally Next.js app at http://localhost:3000"
+  Write-Info "Starting SeddleUp Next.js app at http://localhost:3000"
   npm run dev
 }
 

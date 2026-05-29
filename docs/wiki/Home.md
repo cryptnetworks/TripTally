@@ -1,6 +1,6 @@
-# TripTally Wiki
+# SeddleUp Wiki
 
-TripTally is a Docker-deployable Next.js application for tracking group trip expenses, participants, balances, and settlement suggestions.
+SeddleUp is a Docker-deployable Next.js application for tracking group trip expenses, participants, balances, and settlement suggestions.
 
 This wiki is the operational and contributor documentation for the project.
 

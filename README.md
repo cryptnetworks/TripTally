@@ -1,6 +1,6 @@
-# TripTally
+# SeddleUp
 
-TripTally is a Docker-deployable Next.js app for tracking group trip expenses,
+SeddleUp is a Docker-deployable Next.js app for tracking group trip expenses,
 participants, balances, and settlement suggestions.
 
 ## Features
@@ -105,7 +105,7 @@ curl http://localhost:3000/api/health
 ## Run With Docker Compose
 
 The included Compose file is production-oriented. It builds the local Dockerfile by
-default and runs TripTally privately on the Docker network.
+default and runs SeddleUp privately on the Docker network.
 
 ```bash
 docker compose up -d --build triptally
@@ -125,7 +125,7 @@ services:
 
 ## Public Deployment Options
 
-TripTally supports two Docker Compose deployment profiles:
+SeddleUp supports two Docker Compose deployment profiles:
 
 - `nginx` - public Nginx reverse proxy with Certbot DNS-01 certificates.
 - `cloudflare` - Cloudflare Tunnel with no public inbound ports.
@@ -223,7 +223,7 @@ Manual renewal:
 
 ## Email And MFA
 
-SMTP is optional but recommended for production. TripTally uses email for account
+SMTP is optional but recommended for production. SeddleUp uses email for account
 verification, password reset links, and email two-factor codes.
 
 ```env
@@ -234,7 +234,7 @@ SMTP_SECURE=false
 SMTP_USER=your-smtp-username
 SMTP_PASSWORD=your-smtp-password
 SMTP_FROM=no-reply@app.example.com
-EMAIL_APP_NAME="Trip Tally"
+EMAIL_APP_NAME="SeddleUp"
 PASSWORD_RESET_TOKEN_MINUTES=45
 ```
 
@@ -246,7 +246,7 @@ authenticator-app TOTP from the account settings page.
 
 ## Payments, Receipts, Lookup, And Discord
 
-Payment methods are external links or handles only. TripTally does not process
+Payment methods are external links or handles only. SeddleUp does not process
 payments, store payment credentials, or call payment provider APIs. Settlement
 cards show enabled trip-member-visible payment methods for the person receiving
 money.
@@ -346,7 +346,7 @@ npm test
 npm run test:e2e
 npm run build
 npm run security:audit
-docker build -t triptally:ci .
+docker build -t seddleup:ci .
 ```
 
 End-to-end tests use Playwright:

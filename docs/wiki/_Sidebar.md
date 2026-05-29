@@ -1,4 +1,4 @@
-## TripTally
+## SeddleUp
 
 - [Home](Home)
 - [Running with Docker](Running-with-Docker)

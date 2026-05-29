@@ -55,7 +55,7 @@ run_next() {
   ensure_prisma_client
   ensure_database
 
-  info "Starting TripTally Next.js app at http://localhost:3000"
+  info "Starting SeddleUp Next.js app at http://localhost:3000"
   npm run dev
 }
 

@@ -26,13 +26,13 @@ describe("authenticator TOTP", () => {
 
   it("builds otpauth URIs with issuer and account labels", () => {
     const uri = buildAuthenticatorUri({
-      appName: "Trip Tally",
+      appName: "SeddleUp",
       email: "user@example.com",
       secret: "JBSWY3DPEHPK3PXP"
     });
 
-    expect(uri).toContain("otpauth://totp/Trip%20Tally%3Auser%40example.com");
-    expect(uri).toContain("issuer=Trip%20Tally");
+    expect(uri).toContain("otpauth://totp/SeddleUp%3Auser%40example.com");
+    expect(uri).toContain("issuer=SeddleUp");
     expect(uri).toContain("secret=JBSWY3DPEHPK3PXP");
   });
 });

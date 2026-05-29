@@ -54,7 +54,7 @@ Playwright forces local callback URLs when it starts its own dev server, so loca
 For Docker-impacting changes:
 
 ```bash
-docker build -t triptally:ci .
+docker build -t seddleup:ci .
 ```
 
 ## Prisma Changes

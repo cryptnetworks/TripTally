@@ -5,50 +5,47 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Trip Tally",
-    template: "%s | Trip Tally"
+    default: "SeddleUp",
+    template: "%s | SeddleUp"
   },
-  description: "Track travel expenses and split trip costs easily.",
-  manifest: "/manifest.webmanifest",
-  applicationName: "Trip Tally",
+  description: "Travel together. Settle up easily.",
+  manifest: "/site.webmanifest",
+  applicationName: "SeddleUp",
   metadataBase: new URL(process.env.PUBLIC_APP_URL || "http://localhost:3000"),
   openGraph: {
-    title: "Trip Tally",
-    description: "Track travel expenses and split trip costs easily.",
-    siteName: "Trip Tally",
+    title: "SeddleUp",
+    description: "Travel together. Settle up easily.",
+    siteName: "SeddleUp",
     images: [
       {
-        url: "/branding/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Trip Tally"
+        url: "/app-icon-1024.png",
+        width: 1024,
+        height: 1024,
+        alt: "SeddleUp"
       }
     ],
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trip Tally",
-    description: "Track travel expenses and split trip costs easily.",
-    images: ["/branding/og-image.png"]
+    title: "SeddleUp",
+    description: "Travel together. Settle up easily.",
+    images: ["/app-icon-1024.png"]
   },
   appleWebApp: {
     capable: true,
-    title: "Trip Tally",
+    title: "SeddleUp",
     statusBarStyle: "default",
-    startupImage: ["/branding/apple-touch-icon.png"]
+    startupImage: ["/apple-touch-icon.png"]
   },
   icons: {
-    icon: [
-      { url: "/branding/favicon.ico", sizes: "64x64" },
-      { url: "/branding/logo-icon.png", type: "image/png", sizes: "512x512" }
-    ],
-    apple: "/branding/apple-touch-icon.png"
+    icon: [{ url: "/favicon.ico" }, { url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: "/apple-touch-icon.png"
   }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f766e"
+  themeColor: "#0F172A"
 };
 
 export default function RootLayout({
