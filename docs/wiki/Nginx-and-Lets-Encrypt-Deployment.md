@@ -4,7 +4,7 @@ The `nginx` Compose profile runs a public Nginx reverse proxy and Certbot DNS-01
 
 ## Services
 
-- `triptally`: private Next.js app on internal port `3000`
+- `seddleup`: private Next.js app on internal port `3000`
 - `nginx`: public reverse proxy on ports `80` and `443`
 - `certbot`: Let's Encrypt DNS-01 certificate issuance and renewal
 
@@ -34,7 +34,7 @@ Create an `A` record for your domain, for example `app.example.com`, pointing to
 ## Issue Staging Certificates
 
 ```bash
-docker compose up -d triptally
+docker compose up -d seddleup
 ./scripts/init-letsencrypt.sh
 docker compose --profile nginx up -d
 ```
@@ -63,5 +63,5 @@ docker compose --profile nginx up -d
 Example cron:
 
 ```cron
-17 3,15 * * * cd /path/to/SeddleUp && ./scripts/renew-certs.sh >> /var/log/triptally-certbot.log 2>&1
+17 3,15 * * * cd /path/to/SeddleUp && ./scripts/renew-certs.sh >> /var/log/seddleup-certbot.log 2>&1
 ```

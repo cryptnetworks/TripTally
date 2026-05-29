@@ -94,6 +94,7 @@ try {
 
 if (
   (!nextAuthSecret || placeholderSecrets.has(nextAuthSecret)) &&
+  process.env.SEDDLEUP_ALLOW_INSECURE_SECRET !== "1" &&
   process.env.TRIPTALLY_ALLOW_INSECURE_SECRET !== "1"
 ) {
   fail("NEXTAUTH_SECRET must be set to a real random value.");
@@ -103,6 +104,7 @@ if (
   (!tokenDigestSecret ||
     placeholderSecrets.has(tokenDigestSecret) ||
     tokenDigestSecret.length < 24) &&
+  process.env.SEDDLEUP_ALLOW_INSECURE_SECRET !== "1" &&
   process.env.TRIPTALLY_ALLOW_INSECURE_SECRET !== "1"
 ) {
   fail("TOKEN_DIGEST_SECRET must be set to a real random value.");

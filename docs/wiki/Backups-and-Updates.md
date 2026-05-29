@@ -5,9 +5,9 @@
 ```bash
 mkdir -p backups
 docker run --rm \
-  -v triptally_data:/data \
+  -v seddleup_data:/data \
   -v "$PWD/backups:/backup" \
-  alpine sh -c 'cp /data/triptally.db /backup/triptally-$(date +%Y%m%d-%H%M%S).db'
+  alpine sh -c 'cp /data/seddleup.db /backup/seddleup-$(date +%Y%m%d-%H%M%S).db'
 ```
 
 ## SQLite Restore
@@ -15,22 +15,22 @@ docker run --rm \
 Stop SeddleUp before restoring:
 
 ```bash
-docker stop triptally
+docker stop seddleup
 docker run --rm \
-  -v triptally_data:/data \
+  -v seddleup_data:/data \
   -v "$PWD/backups:/backup" \
-  alpine sh -c 'cp /backup/triptally.db /data/triptally.db'
-docker start triptally
+  alpine sh -c 'cp /backup/seddleup.db /data/seddleup.db'
+docker start seddleup
 ```
 
 ## Update a Single Docker Container
 
 ```bash
 docker pull ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
-docker rm -f triptally
-docker run --name triptally \
+docker rm -f seddleup
+docker run --name seddleup \
   -p 3000:3000 \
-  -v triptally_data:/app/data \
+  -v seddleup_data:/app/data \
   --env-file .env \
   ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
@@ -38,6 +38,10 @@ docker run --name triptally \
 The startup entrypoint applies database migrations automatically.
 
 ## Update Compose Deployment
+
+Back up existing data before switching from the old `triptally_data` volume name
+to `seddleup_data`. The startup entrypoint migrates `/app/data/triptally.db` to
+`/app/data/seddleup.db` only when that old file is present in the mounted volume.
 
 ```bash
 docker compose pull

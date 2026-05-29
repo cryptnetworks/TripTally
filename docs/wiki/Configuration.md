@@ -6,7 +6,7 @@ SeddleUp reads configuration from environment variables. Docker deployments shou
 
 ```env
 NODE_ENV=production
-DATABASE_URL=file:/app/data/triptally.db
+DATABASE_URL=file:/app/data/seddleup.db
 NEXTAUTH_URL=https://app.example.com
 PUBLIC_APP_URL=https://app.example.com
 NEXTAUTH_SECRET=generate-a-long-random-secret

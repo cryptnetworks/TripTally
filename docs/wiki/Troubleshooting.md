@@ -13,7 +13,7 @@ Check:
 View logs:
 
 ```bash
-docker logs triptally
+docker logs seddleup
 ```
 
 ## OAuth Redirects to localhost or 0.0.0.0
@@ -31,10 +31,10 @@ AUTH_URL=https://app.example.com
 Confirm the Cloudflare public hostname service is:
 
 ```text
-http://triptally:3000
+http://seddleup:3000
 ```
 
-Also confirm the `cloudflared` service shares the same Compose network as `triptally`.
+Also confirm the `cloudflared` service shares the same Compose network as `seddleup`.
 
 ## Nginx Certificate Issuance Fails
 
@@ -57,13 +57,13 @@ Confirm the same persistent volume is mounted:
 
 ```bash
 docker volume ls
-docker inspect triptally
+docker inspect seddleup
 ```
 
 The app database should live at:
 
 ```text
-/app/data/triptally.db
+/app/data/seddleup.db
 ```
 
 ## Healthcheck Fails
@@ -71,7 +71,7 @@ The app database should live at:
 Check logs and database connectivity:
 
 ```bash
-docker logs triptally
+docker logs seddleup
 curl http://localhost:3000/api/health
 ```
 

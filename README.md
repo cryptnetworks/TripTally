@@ -48,7 +48,7 @@ Minimum local Docker values:
 
 ```env
 NODE_ENV=production
-DATABASE_URL=file:/app/data/triptally.db
+DATABASE_URL=file:/app/data/seddleup.db
 NEXTAUTH_URL=http://localhost:3000
 PUBLIC_APP_URL=http://localhost:3000
 NEXTAUTH_SECRET=paste-generated-secret-here
@@ -81,11 +81,11 @@ See `.env.example` and `.env.docker.example` for the full variable list.
 ## Run With Docker
 
 ```bash
-docker volume create triptally_data
+docker volume create seddleup_data
 
-docker run --name triptally \
+docker run --name seddleup \
   -p 3000:3000 \
-  -v triptally_data:/app/data \
+  -v seddleup_data:/app/data \
   --env-file .env \
   ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
@@ -108,17 +108,22 @@ The included Compose file is production-oriented. It builds the local Dockerfile
 default and runs SeddleUp privately on the Docker network.
 
 ```bash
-docker compose up -d --build triptally
+docker compose up -d --build seddleup
 ```
 
-Compose mounts `triptally_data` at `/app/data`.
+Compose mounts `seddleup_data` at `/app/data`.
+
+Existing deployments that used the old `triptally_data` volume should back up
+the old volume before switching names. On startup, SeddleUp migrates
+`/app/data/triptally.db` to `/app/data/seddleup.db` when the old file exists in
+the mounted volume and the new file is absent.
 
 To use the pinned GHCR image with Compose instead of building locally, either edit
 `docker-compose.yml` or override the service image in your deployment tooling:
 
 ```yaml
 services:
-  triptally:
+  seddleup:
     image: ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
     build: null
 ```
@@ -164,7 +169,7 @@ CLOUDFLARE_TUNNEL_TOKEN=your-cloudflare-tunnel-token
 In Cloudflare Zero Trust, create a tunnel and public hostname:
 
 - Hostname: `app.example.com`
-- Service: `http://triptally:3000`
+- Service: `http://seddleup:3000`
 
 Start:
 
@@ -173,7 +178,7 @@ docker compose --profile cloudflare up -d --build
 ```
 
 No public inbound ports are required. The `cloudflared` container connects
-outbound to Cloudflare and forwards traffic to the private `triptally` service.
+outbound to Cloudflare and forwards traffic to the private `seddleup` service.
 
 ## Nginx And Let's Encrypt
 
@@ -197,7 +202,7 @@ zone that owns `DOMAIN`.
 Issue staging certificates first:
 
 ```bash
-docker compose up -d triptally
+docker compose up -d seddleup
 ./scripts/init-letsencrypt.sh
 docker compose --profile nginx up -d
 ```
@@ -389,20 +394,20 @@ Back up SQLite:
 ```bash
 mkdir -p backups
 docker run --rm \
-  -v triptally_data:/data \
+  -v seddleup_data:/data \
   -v "$PWD/backups:/backup" \
-  alpine sh -c 'cp /data/triptally.db /backup/triptally-$(date +%Y%m%d-%H%M%S).db'
+  alpine sh -c 'cp /data/seddleup.db /backup/seddleup-$(date +%Y%m%d-%H%M%S).db'
 ```
 
 Restore SQLite:
 
 ```bash
-docker stop triptally
+docker stop seddleup
 docker run --rm \
-  -v triptally_data:/data \
+  -v seddleup_data:/data \
   -v "$PWD/backups:/backup" \
-  alpine sh -c 'cp /backup/triptally.db /data/triptally.db'
-docker start triptally
+  alpine sh -c 'cp /backup/seddleup.db /data/seddleup.db'
+docker start seddleup
 ```
 
 ## Updates
@@ -411,10 +416,10 @@ Pull the new image, recreate the container, and keep the same volume:
 
 ```bash
 docker pull ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
-docker rm -f triptally
-docker run --name triptally \
+docker rm -f seddleup
+docker run --name seddleup \
   -p 3000:3000 \
-  -v triptally_data:/app/data \
+  -v seddleup_data:/app/data \
   --env-file .env \
   ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
@@ -428,7 +433,7 @@ The startup entrypoint applies database migrations automatically.
 - If OAuth redirects to localhost or `0.0.0.0`, set `PUBLIC_APP_URL`,
   `NEXTAUTH_URL`, and `AUTH_URL` to the public HTTPS URL.
 - If Cloudflare Tunnel starts but the site is unavailable, confirm the public
-  hostname service is exactly `http://triptally:3000`.
+  hostname service is exactly `http://seddleup:3000`.
 - If Nginx certificate issuance fails, verify the Cloudflare token permissions and
   DNS propagation.
 - If SQLite is missing after recreation, confirm `/app/data` is mounted to the
