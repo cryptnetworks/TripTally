@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 
 type LogoutButtonProps = {
   variant?: "nav" | "menu" | "mobile" | "button";
@@ -32,7 +33,7 @@ export function LogoutButton({ variant = "button" }: LogoutButtonProps) {
   }
 
   return (
-    <span className={variant === "mobile" ? "flex flex-col items-center" : "block"}>
+    <div className={variant === "mobile" ? "flex flex-col items-center" : "block"}>
       <button
         className={styles[variant]}
         data-testid={variant === "mobile" ? "mobile-nav-logout" : "logout-button"}
@@ -43,7 +44,7 @@ export function LogoutButton({ variant = "button" }: LogoutButtonProps) {
         <LogOut className="h-5 w-5" aria-hidden />
         {isPending ? "Logging out..." : "Logout"}
       </button>
-      {error ? <span className="mt-1 block text-xs text-coral">{error}</span> : null}
-    </span>
+      <FeedbackAlert feedback={error ? { tone: "error", message: error } : null} className="mt-2" />
+    </div>
   );
 }

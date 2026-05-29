@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api-response";
 
 function testOAuthEnabled() {
   return (
@@ -8,12 +9,12 @@ function testOAuthEnabled() {
 
 export async function GET(request: Request) {
   if (!testOAuthEnabled()) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiError("NOT_FOUND", 404);
   }
 
   const authorization = request.headers.get("authorization");
   if (authorization !== "Bearer test-oauth-access-token") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("UNAUTHORIZED", 401);
   }
 
   const email = process.env.TEST_OAUTH_EMAIL || "sso-user@triptally.test";

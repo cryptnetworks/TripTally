@@ -1,8 +1,10 @@
 import { AdminShell } from "@/components/AdminShell";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { deleteUser, resetUserPassword, setUserDisabled, updateUserRole } from "@/lib/actions";
 import { requireAdmin } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function AdminUsersPage({
   searchParams
@@ -45,11 +47,7 @@ export default async function AdminUsersPage({
         title="Users"
         description="Manage user roles, status, local passwords, and linked authentication providers."
       />
-      {query.error ? (
-        <p className="mb-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral">
-          Action blocked: {query.error}.
-        </p>
-      ) : null}
+      <FeedbackAlert className="mb-4" feedback={queryFeedback("admin", query.error)} />
       <form className="card mb-4 grid gap-3 p-4 md:grid-cols-4">
         <input className="field" name="q" placeholder="Search users" defaultValue={query.q || ""} />
         <select className="field" name="role" defaultValue={query.role || "all"}>

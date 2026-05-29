@@ -16,6 +16,7 @@ test("adds an expense and updates balances", async ({ page }, testInfo) => {
   await createTripWithParticipants(page, uniqueLabel(testInfo, "Expense Trip"));
 
   await addExpense(page, "Coffee", "12.50");
+  await expect(page.getByRole("status").filter({ hasText: "Expense added." })).toBeVisible();
   await expect(page.getByText("$12.50").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Balances" })).toBeVisible();
 });

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { uploadReceipt } from "@/lib/actions";
@@ -7,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { requireTripAccess } from "@/lib/trip-access";
 import { canCreateTripExpense } from "@/lib/trip-permissions";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function NewReceiptPage({
   params,
@@ -47,11 +49,7 @@ export default async function NewReceiptPage({
         description="Attach a local receipt file, parse what we can, then review the details before saving."
       />
       <section className="card mx-auto max-w-2xl p-5">
-        {query.error ? (
-          <p className="mb-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral">
-            Receipt upload failed: {query.error}.
-          </p>
-        ) : null}
+        <FeedbackAlert className="mb-4" feedback={queryFeedback("receipt", query.error)} />
         <form className="grid gap-4" action={action}>
           <div>
             <label className="label" htmlFor="receiptFile">

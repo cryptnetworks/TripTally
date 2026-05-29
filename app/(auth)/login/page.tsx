@@ -1,7 +1,43 @@
 import Link from "next/link";
 import { LoginForm } from "@/components/AuthForm";
 import { BrandLogo } from "@/components/BrandLogo";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { OAuthButtons } from "@/components/OAuthButtons";
+import { queryFeedback, type UserFeedback } from "@/lib/user-messages";
+
+function loginFeedback(query: {
+  registered?: string;
+  reset?: string;
+  logout?: string;
+  verify?: string;
+  verified?: string;
+  verificationSent?: string;
+  oauth?: string;
+}) {
+  const messages: UserFeedback[] = [];
+  if (query.registered) {
+    messages.push({
+      tone: "success",
+      message: "Account created. Verify your email before logging in."
+    });
+  }
+  if (query.verify)
+    messages.push({ tone: "success", message: "Check your inbox for a verification link." });
+  if (query.verified) messages.push(queryFeedback("auth", "verified")!);
+  if (query.verificationSent) {
+    messages.push({
+      tone: "success",
+      message: "If that email needs verification, a new link has been sent."
+    });
+  }
+  if (query.reset)
+    messages.push({ tone: "success", message: "Password updated. Login with your new password." });
+  if (query.logout) messages.push({ tone: "success", message: "You have been logged out." });
+  if (query.oauth && query.oauth !== "complete") {
+    messages.push(queryFeedback("auth", query.oauth) || queryFeedback("auth", "callback")!);
+  }
+  return messages;
+}
 
 export default async function LoginPage({
   searchParams
@@ -17,6 +53,7 @@ export default async function LoginPage({
   }>;
 }) {
   const query = await searchParams;
+  const feedback = loginFeedback(query);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-page px-4 py-10">
@@ -28,41 +65,9 @@ export default async function LoginPage({
         <p className="mt-2 text-sm text-muted">
           Track trip costs, split expenses, and settle up clearly.
         </p>
-        {query.registered ? (
-          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
-            Account created. Verify your email before logging in.
-          </p>
-        ) : null}
-        {query.verify ? (
-          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
-            Check your inbox for a verification link.
-          </p>
-        ) : null}
-        {query.verified ? (
-          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
-            Email verified. Login to continue.
-          </p>
-        ) : null}
-        {query.verificationSent ? (
-          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
-            If that email needs verification, a new link has been sent.
-          </p>
-        ) : null}
-        {query.reset ? (
-          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
-            Password updated. Login with your new password.
-          </p>
-        ) : null}
-        {query.logout ? (
-          <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-ocean">
-            You have been logged out.
-          </p>
-        ) : null}
-        {query.oauth && query.oauth !== "complete" ? (
-          <p className="mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral">
-            OAuth sign-in failed: {query.oauth}.
-          </p>
-        ) : null}
+        {feedback.map((item) => (
+          <FeedbackAlert key={`${item.tone}:${item.message}`} className="mt-4" feedback={item} />
+        ))}
         <div className="mt-6">
           <LoginForm />
         </div>

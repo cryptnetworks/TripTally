@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { registerUser } from "@/lib/actions";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function RegisterPage({
   searchParams
@@ -8,12 +10,7 @@ export default async function RegisterPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const query = await searchParams;
-  const errorMessage =
-    query.error === "exists"
-      ? "A user with that username or email already exists."
-      : query.error
-        ? "Check the form and try again."
-        : "";
+  const feedback = queryFeedback("register", query.error);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-page px-4 py-10">
@@ -25,9 +22,7 @@ export default async function RegisterPage({
         <p className="mt-2 text-sm text-muted">
           Create an account to keep your trips private and synced.
         </p>
-        {errorMessage ? (
-          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-coral">{errorMessage}</p>
-        ) : null}
+        <FeedbackAlert className="mt-4" feedback={feedback} />
         <form className="mt-6 grid gap-4" action={registerUser} data-testid="register-form">
           <div>
             <label className="label" htmlFor="username">

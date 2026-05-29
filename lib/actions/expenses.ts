@@ -148,7 +148,7 @@ export async function createExpense(tripId: string, formData: FormData) {
 
   logger.info("expense.create.success", { userId, tripId });
   revalidatePath(`/trips/${tripId}`);
-  redirect(`/trips/${tripId}`);
+  redirect(`/trips/${tripId}?message=expense-created`);
 }
 
 export async function updateExpense(tripId: string, expenseId: string, formData: FormData) {
@@ -234,7 +234,7 @@ export async function updateExpense(tripId: string, expenseId: string, formData:
 
   logger.info("expense.update.success", { userId, tripId, expenseId });
   revalidatePath(`/trips/${tripId}`);
-  redirect(`/trips/${tripId}`);
+  redirect(`/trips/${tripId}?message=expense-updated`);
 }
 
 export async function deleteExpense(tripId: string, expenseId: string) {
@@ -261,5 +261,5 @@ export async function deleteExpense(tripId: string, expenseId: string) {
   await prisma.expense.delete({ where: { id: expenseId } });
   logger.info("expense.delete.success", { userId, tripId, expenseId });
   revalidatePath(`/trips/${tripId}`);
-  redirect(`/trips/${tripId}`);
+  redirect(`/trips/${tripId}?message=expense-deleted`);
 }

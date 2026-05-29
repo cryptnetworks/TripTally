@@ -371,6 +371,10 @@ and a Mobile Safari project using Playwright's iPhone WebKit profile. The iOS
 regression test covers decimal amount entry and submit behavior for the add
 expense flow.
 
+User-facing copy is centralized in `lib/user-messages.ts` and rendered through
+`FeedbackAlert` where practical. See `docs/user-facing-messages.md` before
+adding new activity, success, error, or API failure messages.
+
 ## Repository Automation
 
 GitHub Actions provide CI, Docker image publishing, dependency review, security scanning, and release creation. Dependabot checks npm packages, GitHub Actions, and Docker base images weekly.

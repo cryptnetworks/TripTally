@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api-response";
 import { calculateBalances } from "@/lib/calculations";
 import { getAppConfig } from "@/lib/config";
 import { createDiscordLinkToken } from "@/lib/discord/linking";
@@ -32,14 +33,14 @@ async function linkedUser(discordUserId: string) {
 export async function POST(request: Request) {
   const config = getAppConfig();
   if (!config.discordEnabled) {
-    return NextResponse.json({ error: "Discord integration is disabled" }, { status: 404 });
+    return apiError("NOT_FOUND", 404);
   }
 
   const body = await request.text();
   const signature = request.headers.get("x-signature-ed25519");
   const timestamp = request.headers.get("x-signature-timestamp");
   if (!verifyDiscordRequest({ body, signature, timestamp, publicKey: config.discordPublicKey })) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    return apiError("UNAUTHORIZED", 401);
   }
 
   const interaction = JSON.parse(body);

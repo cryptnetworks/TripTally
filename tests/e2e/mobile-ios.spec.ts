@@ -23,6 +23,6 @@ test("iPhone WebKit user can add a decimal expense", async ({ page }, testInfo) 
   await page.getByLabel("Date").fill("2026-07-02");
   await page.getByRole("button", { name: "Record expense" }).tap();
 
-  await expect(page.getByText("iOS Coffee")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "iOS Coffee" })).toBeVisible();
   await expect(page.getByText("$12.50").first()).toBeVisible();
 });

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { resendVerificationEmail } from "@/lib/actions";
+import { safeApiErrorMessage } from "@/lib/user-messages";
 
 type LoginResponse =
   | { ok: true; loginToken: string }
@@ -15,7 +17,8 @@ type LoginResponse =
         | "MFA_REQUIRED"
         | "INVALID_MFA_CODE"
         | "MFA_MISCONFIGURED"
-        | "LOGIN_FAILED";
+        | "LOGIN_FAILED"
+        | { code?: string; message?: string };
       method?: "email" | "authenticator";
     };
 
@@ -112,6 +115,10 @@ export function LoginForm() {
 
     if (!loginResult.ok) {
       setEmail(emailValue);
+      if (typeof loginResult.error === "object") {
+        setError(loginResult.error.message || safeApiErrorMessage(loginResult.error.code));
+        return;
+      }
       if (loginResult.error === "EMAIL_VERIFICATION_REQUIRED") {
         setError("Verify your email before logging in.");
         return;
@@ -166,7 +173,7 @@ export function LoginForm() {
   return (
     <>
       <form className="grid gap-4" data-testid="login-form" onSubmit={onSubmit}>
-        {error ? <p className="rounded-lg bg-red-50 p-3 text-sm text-coral">{error}</p> : null}
+        <FeedbackAlert feedback={error ? { tone: "error", message: error } : null} />
         {requiresCode ? (
           <>
             <div>

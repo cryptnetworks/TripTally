@@ -300,7 +300,10 @@ describe("login API", () => {
     expect(result.status).toBe(403);
     expect(result.body).toMatchObject({
       ok: false,
-      error: "INVALID_CREDENTIALS"
+      error: {
+        code: "FORBIDDEN",
+        message: "You do not have permission to do that."
+      }
     });
   });
 

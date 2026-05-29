@@ -14,7 +14,7 @@ test("test OAuth provider creates a server-side session after callback", async (
 test("OAuth callback rejects missing callback parameters", async ({ page }) => {
   await page.goto("/api/auth/oauth/test/callback");
   await expect(page).toHaveURL(/\/login\?oauth=invalid/);
-  await expect(page.getByText("OAuth sign-in failed: invalid.")).toBeVisible();
+  await expect(page.getByText("This link is invalid or has expired.")).toBeVisible();
 });
 
 test("OAuth callback rejects state mismatch", async ({ page }) => {

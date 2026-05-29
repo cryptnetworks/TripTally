@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as bcrypt from "bcryptjs";
+import { apiError } from "@/lib/api-response";
 import { createSessionLoginToken } from "@/lib/login-token";
 import { isSameOriginRequest } from "@/lib/csrf";
 import { logger } from "@/lib/logger";
@@ -19,6 +20,14 @@ function authResult(data: Record<string, unknown>) {
   return NextResponse.json(data);
 }
 
+function authFailure(error: string, extra: Record<string, unknown> = {}) {
+  return authResult({
+    ok: false,
+    error,
+    ...extra
+  });
+}
+
 function logLoginDebug(fields: {
   email?: string;
   userId?: string;
@@ -34,7 +43,7 @@ function logLoginDebug(fields: {
 async function handleLogin(request: Request) {
   if (!isSameOriginRequest(request.headers)) {
     logger.warn("auth.login_api.csrf_blocked");
-    return NextResponse.json({ ok: false, error: "INVALID_CREDENTIALS" }, { status: 403 });
+    return apiError("FORBIDDEN", 403);
   }
 
   let body: unknown;
@@ -42,13 +51,13 @@ async function handleLogin(request: Request) {
     body = await request.json();
   } catch {
     logger.warn("auth.login_api.invalid_json");
-    return authResult({ ok: false, error: "INVALID_CREDENTIALS" });
+    return authFailure("INVALID_CREDENTIALS");
   }
 
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success || !parsed.data.password) {
     logger.warn("auth.login_api.validation_failed");
-    return authResult({ ok: false, error: "INVALID_CREDENTIALS" });
+    return authFailure("INVALID_CREDENTIALS");
   }
 
   const { email, password, twoFactorCode } = parsed.data;
@@ -56,7 +65,7 @@ async function handleLogin(request: Request) {
   if (!settings.localAuthEnabled) {
     logger.warn("auth.login.local_disabled", { email });
     logLoginDebug({ email, stepFailed: "local_auth_disabled" });
-    return authResult({ ok: false, error: "INVALID_CREDENTIALS" });
+    return authFailure("INVALID_CREDENTIALS");
   }
 
   const rateLimit = checkRateLimit(`login:${email}`, {
@@ -66,7 +75,7 @@ async function handleLogin(request: Request) {
   if (!rateLimit.allowed) {
     logger.warn("auth.login.rate_limited", { email });
     logLoginDebug({ email, stepFailed: "rate_limited" });
-    return authResult({ ok: false, error: "INVALID_CREDENTIALS" });
+    return authFailure("INVALID_CREDENTIALS");
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -74,13 +83,13 @@ async function handleLogin(request: Request) {
   if (!user) {
     logger.warn("auth.login.unknown_user", { email });
     logLoginDebug({ email, stepFailed: "unknown_user" });
-    return authResult({ ok: false, error: "INVALID_CREDENTIALS" });
+    return authFailure("INVALID_CREDENTIALS");
   }
 
   if (user.disabledAt) {
     logger.warn("auth.login.disabled_user", { email, userId: user.id });
     logLoginDebug({ email, userId: user.id, stepFailed: "disabled_user" });
-    return authResult({ ok: false, error: "INVALID_CREDENTIALS" });
+    return authFailure("INVALID_CREDENTIALS");
   }
 
   const isValid = await bcrypt.compare(password, user.passwordHash);
@@ -88,13 +97,13 @@ async function handleLogin(request: Request) {
   if (!isValid) {
     logger.warn("auth.login.invalid_password", { email, userId: user.id });
     logLoginDebug({ email, userId: user.id, stepFailed: "invalid_password" });
-    return authResult({ ok: false, error: "INVALID_CREDENTIALS" });
+    return authFailure("INVALID_CREDENTIALS");
   }
 
   if (!user.emailVerifiedAt) {
     logger.warn("auth.login.email_unverified", { email, userId: user.id });
     logLoginDebug({ email, userId: user.id, stepFailed: "email_unverified" });
-    return authResult({ ok: false, error: "EMAIL_VERIFICATION_REQUIRED" });
+    return authFailure("EMAIL_VERIFICATION_REQUIRED");
   }
 
   if (user.twoFactorMethod === "email") {
@@ -102,12 +111,12 @@ async function handleLogin(request: Request) {
     if (!twoFactorCode) {
       await startEmailTwoFactorChallenge(user);
       logLoginDebug({ email, userId: user.id, stepFailed: "email_mfa_required" });
-      return authResult({ ok: false, error: "MFA_REQUIRED", method: "email" });
+      return authFailure("MFA_REQUIRED", { method: "email" });
     }
 
     if (!(await verifyEmailTwoFactorCode(user.id, twoFactorCode))) {
       logLoginDebug({ email, userId: user.id, stepFailed: "invalid_email_mfa_code" });
-      return authResult({ ok: false, error: "INVALID_MFA_CODE" });
+      return authFailure("INVALID_MFA_CODE");
     }
   }
 
@@ -121,12 +130,12 @@ async function handleLogin(request: Request) {
         authenticatorEnabled: user.authenticatorEnabled
       });
       logLoginDebug({ email, userId: user.id, stepFailed: "mfa_misconfigured" });
-      return authResult({ ok: false, error: "MFA_MISCONFIGURED" });
+      return authFailure("MFA_MISCONFIGURED");
     }
 
     if (!twoFactorCode) {
       logLoginDebug({ email, userId: user.id, stepFailed: "authenticator_mfa_required" });
-      return authResult({ ok: false, error: "MFA_REQUIRED", method: "authenticator" });
+      return authFailure("MFA_REQUIRED", { method: "authenticator" });
     }
 
     if (
@@ -139,7 +148,7 @@ async function handleLogin(request: Request) {
       ))
     ) {
       logLoginDebug({ email, userId: user.id, stepFailed: "invalid_authenticator_mfa_code" });
-      return authResult({ ok: false, error: "INVALID_MFA_CODE" });
+      return authFailure("INVALID_MFA_CODE");
     }
   }
 
@@ -157,6 +166,6 @@ export async function POST(request: Request) {
     logger.error("auth.login_api.failed", {
       error: error instanceof Error ? error.message : "Unknown login error"
     });
-    return NextResponse.json({ ok: false, error: "LOGIN_FAILED" }, { status: 500 });
+    return apiError("LOGIN_FAILED", 500);
   }
 }

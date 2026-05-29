@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { ItemLookupBox } from "@/components/item-lookup/ItemLookupBox";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
@@ -13,13 +14,17 @@ import {
   canEditExpense,
   isTripManager
 } from "@/lib/trip-permissions";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function EditExpensePage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ tripId: string; expenseId: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { tripId, expenseId } = await params;
+  const query = await searchParams;
   const user = await requireUser();
   const resolved = await requireTripAccess(tripId, user.id);
   const trip = await prisma.trip.findFirst({
@@ -53,6 +58,7 @@ export default async function EditExpensePage({
         description="Update the cost details or remove this expense."
       />
       <section className="card mx-auto max-w-2xl p-5">
+        <FeedbackAlert className="mb-4" feedback={queryFeedback("expense", query.error)} />
         <div className="mb-4 flex justify-end">
           <DeleteButton action={removeExpense} label={`Delete ${expense.title}`} />
         </div>

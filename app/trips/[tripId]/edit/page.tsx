@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { updateTrip } from "@/lib/actions";
@@ -7,9 +8,17 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { requireTripAccess } from "@/lib/trip-access";
 import { isTripManager } from "@/lib/trip-permissions";
+import { queryFeedback } from "@/lib/user-messages";
 
-export default async function EditTripPage({ params }: { params: Promise<{ tripId: string }> }) {
+export default async function EditTripPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ tripId: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { tripId } = await params;
+  const query = await searchParams;
   const user = await requireUser();
   const resolved = await requireTripAccess(tripId, user.id);
   if (!isTripManager(resolved.access.role)) notFound();
@@ -28,6 +37,7 @@ export default async function EditTripPage({ params }: { params: Promise<{ tripI
         description="Update the trip name, destination, or dates."
       />
       <section className="card mx-auto max-w-2xl p-5">
+        <FeedbackAlert className="mb-4" feedback={queryFeedback("trip", query.error)} />
         <form className="grid gap-4" action={action} data-testid="trip-form">
           <div>
             <label className="label" htmlFor="name">

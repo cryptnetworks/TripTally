@@ -2,18 +2,27 @@
 
 import { useState, useTransition } from "react";
 import { Search } from "lucide-react";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import type { ItemLookupResult } from "@/lib/item-lookup/types";
 
 export function ItemLookupBox() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ItemLookupResult[]>([]);
+  const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function search() {
     startTransition(async () => {
-      const response = await fetch(`/api/item-lookup/search?q=${encodeURIComponent(query)}`);
-      const payload = (await response.json()) as { results: ItemLookupResult[] };
-      setResults(payload.results);
+      setError("");
+      try {
+        const response = await fetch(`/api/item-lookup/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error("lookup_failed");
+        const payload = (await response.json()) as { results: ItemLookupResult[] };
+        setResults(payload.results);
+      } catch {
+        setResults([]);
+        setError("Item lookup is unavailable right now. You can still enter the item manually.");
+      }
     });
   }
 
@@ -42,6 +51,7 @@ export function ItemLookupBox() {
           <span className="sr-only">Search</span>
         </button>
       </div>
+      <FeedbackAlert feedback={error ? { tone: "error", message: error } : null} className="mt-3" />
       {results.length > 0 ? (
         <div className="mt-3 grid gap-2">
           {results.map((result) => (

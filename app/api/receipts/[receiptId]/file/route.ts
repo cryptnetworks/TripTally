@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { resolveReceiptPathInsideUploadDir } from "@/lib/receipts/storage";
 import { requireUser } from "@/lib/session";
@@ -13,10 +13,10 @@ export async function GET(
   const user = await requireUser();
   const { receiptId } = await params;
   const receipt = await prisma.receipt.findUnique({ where: { id: receiptId } });
-  if (!receipt) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!receipt) return apiError("NOT_FOUND", 404);
 
   const access = await resolveTripAccess(receipt.tripId, user.id);
-  if (!access) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!access) return apiError("NOT_FOUND", 404);
 
   let resolvedPath: string;
   let fileStat: Awaited<ReturnType<typeof stat>>;
@@ -24,7 +24,7 @@ export async function GET(
     resolvedPath = resolveReceiptPathInsideUploadDir(receipt.storedPath);
     fileStat = await stat(resolvedPath);
   } catch {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiError("NOT_FOUND", 404);
   }
 
   const stream = createReadStream(resolvedPath);

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { resetPassword } from "@/lib/actions";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function ResetPasswordPage({
   searchParams
@@ -20,11 +22,7 @@ export default async function ResetPasswordPage({
         <p className="mt-2 text-sm text-muted">
           Use at least 8 characters. Reset links can only be used once.
         </p>
-        {query.error ? (
-          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-coral">
-            This reset link is invalid or expired. Request a new link.
-          </p>
-        ) : null}
+        <FeedbackAlert className="mt-4" feedback={queryFeedback("auth", query.error)} />
         <form className="mt-6 grid gap-4" action={resetPassword} data-testid="reset-password-form">
           <input data-testid="reset-password-token" name="token" type="hidden" value={token} />
           <div>

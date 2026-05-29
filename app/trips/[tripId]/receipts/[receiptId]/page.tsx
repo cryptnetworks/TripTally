@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { saveReceiptReview } from "@/lib/actions";
@@ -9,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { requireTripAccess } from "@/lib/trip-access";
 import { isTripManager } from "@/lib/trip-permissions";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function ReceiptReviewPage({
   params,
@@ -49,11 +51,10 @@ export default async function ReceiptReviewPage({
       />
       <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
         <section className="card p-5">
-          {query.saved ? (
-            <p className="mb-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean">
-              Receipt review saved.
-            </p>
-          ) : null}
+          <FeedbackAlert
+            className="mb-4"
+            feedback={query.saved ? queryFeedback("receipt", "saved") : null}
+          />
           <form className="grid gap-4" action={action}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>

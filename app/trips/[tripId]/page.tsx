@@ -4,6 +4,7 @@ import { BalanceCard } from "@/components/BalanceCard";
 import { DeleteButton } from "@/components/DeleteButton";
 import { EmptyState } from "@/components/EmptyState";
 import { ExpenseCard } from "@/components/ExpenseCard";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { SettlementList } from "@/components/SettlementList";
@@ -22,16 +23,17 @@ import {
   canViewExpense,
   isTripManager
 } from "@/lib/trip-permissions";
+import { formatActivityMessage, queryFeedback } from "@/lib/user-messages";
 
 export default async function TripDetailPage({
   params,
   searchParams
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; error?: string; message?: string }>;
 }) {
   const { tripId } = await params;
-  const { filter = "all" } = await searchParams;
+  const { filter = "all", error, message } = await searchParams;
   const user = await requireUser();
   const resolved = await requireTripAccess(tripId, user.id);
   const role = resolved.access.role;
@@ -62,7 +64,11 @@ export default async function TripDetailPage({
           shares: { include: { participant: true } }
         }
       },
-      auditLogs: { orderBy: { createdAt: "desc" }, take: 8 }
+      auditLogs: {
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        include: { actor: { select: { username: true, email: true } } }
+      }
     }
   });
 
@@ -116,6 +122,10 @@ export default async function TripDetailPage({
         eyebrow="Trip summary"
         title={trip.name}
         description={`${trip.destination || "Destination pending"} - ${formatDate(trip.startDate)} to ${formatDate(trip.endDate)}`}
+      />
+      <FeedbackAlert
+        className="mb-5"
+        feedback={queryFeedback("trip", message) || queryFeedback("trip", error)}
       />
 
       <div className="mb-5 flex flex-col gap-2 sm:flex-row">
@@ -329,7 +339,7 @@ export default async function TripDetailPage({
               <div className="grid gap-3">
                 {trip.auditLogs.map((entry) => (
                   <div key={entry.id} className="rounded-lg border border-line p-3">
-                    <p className="text-sm font-semibold text-ink">{entry.action}</p>
+                    <p className="text-sm font-semibold text-ink">{formatActivityMessage(entry)}</p>
                     <p className="text-xs text-muted">{formatDate(entry.createdAt)}</p>
                   </div>
                 ))}

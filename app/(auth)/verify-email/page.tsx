@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { verifyEmailAddress } from "@/lib/actions";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function VerifyEmailPage({
   searchParams
@@ -20,11 +22,7 @@ export default async function VerifyEmailPage({
         <p className="mt-2 text-sm text-muted">
           Email verification is required before you can sign in to Trip Tally.
         </p>
-        {query.error ? (
-          <p className="mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral">
-            This verification link is invalid or expired.
-          </p>
-        ) : null}
+        <FeedbackAlert className="mt-4" feedback={queryFeedback("auth", query.error)} />
         <form className="mt-6" action={verifyEmailAddress}>
           <input name="token" type="hidden" value={token} />
           <button className="btn-primary w-full" disabled={!token} type="submit">

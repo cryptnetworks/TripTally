@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { ItemLookupBox } from "@/components/item-lookup/ItemLookupBox";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
@@ -12,9 +13,17 @@ import {
   canCreateTripExpense,
   isTripManager
 } from "@/lib/trip-permissions";
+import { queryFeedback } from "@/lib/user-messages";
 
-export default async function NewExpensePage({ params }: { params: Promise<{ tripId: string }> }) {
+export default async function NewExpensePage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ tripId: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { tripId } = await params;
+  const query = await searchParams;
   const user = await requireUser();
   const resolved = await requireTripAccess(tripId, user.id);
   if (!canCreateTripExpense(resolved.access.role)) notFound();
@@ -43,6 +52,7 @@ export default async function NewExpensePage({ params }: { params: Promise<{ tri
         description="Choose the payer and everyone who shares this cost."
       />
       <section className="card mx-auto max-w-2xl p-5">
+        <FeedbackAlert className="mb-4" feedback={queryFeedback("expense", query.error)} />
         <form className="grid gap-4" action={action} data-testid="expense-form">
           <ItemLookupBox />
           <div>

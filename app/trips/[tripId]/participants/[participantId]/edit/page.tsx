@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { DeleteButton } from "@/components/DeleteButton";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { deleteParticipant, updateParticipant } from "@/lib/actions";
@@ -7,13 +8,17 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { requireTripAccess } from "@/lib/trip-access";
 import { isTripManager } from "@/lib/trip-permissions";
+import { queryFeedback } from "@/lib/user-messages";
 
 export default async function EditParticipantPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ tripId: string; participantId: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { tripId, participantId } = await params;
+  const query = await searchParams;
   const user = await requireUser();
   const resolved = await requireTripAccess(tripId, user.id);
   if (!isTripManager(resolved.access.role)) notFound();
@@ -38,6 +43,7 @@ export default async function EditParticipantPage({
         description="Update traveler details or remove them from this trip."
       />
       <section className="card mx-auto max-w-2xl p-5">
+        <FeedbackAlert className="mb-4" feedback={queryFeedback("trip", query.error)} />
         <div className="mb-4 flex justify-end">
           <DeleteButton action={removeParticipant} label={`Delete ${participant.name}`} />
         </div>

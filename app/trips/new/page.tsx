@@ -1,10 +1,17 @@
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { createTrip } from "@/lib/actions";
 import { requireUser } from "@/lib/session";
+import { queryFeedback } from "@/lib/user-messages";
 
-export default async function NewTripPage() {
+export default async function NewTripPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   await requireUser();
+  const query = await searchParams;
 
   return (
     <PageShell>
@@ -14,6 +21,7 @@ export default async function NewTripPage() {
         description="Add the core trip details. Participants and expenses come next."
       />
       <section className="card mx-auto max-w-2xl p-5">
+        <FeedbackAlert className="mb-4" feedback={queryFeedback("trip", query.error)} />
         <form className="grid gap-4" action={createTrip} data-testid="trip-form">
           <div>
             <label className="label" htmlFor="name">

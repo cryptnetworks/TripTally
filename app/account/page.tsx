@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
+import { FeedbackAlert } from "@/components/FeedbackAlert";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -18,43 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { enabledLoginProviders } from "@/lib/oauth-providers";
 import { paymentProviderLabel, paymentProviders } from "@/lib/payments";
-
-function profileMessage(status?: string) {
-  if (status === "updated") return "Account details updated.";
-  if (status === "duplicate") return "That username or email is already in use.";
-  if (status === "invalid") return "Check your account details and try again.";
-  return "";
-}
-
-function passwordMessage(status?: string) {
-  if (status === "updated") return "Password updated.";
-  if (status === "current") return "Current password is incorrect.";
-  if (status === "invalid") return "Use a valid password and matching confirmation.";
-  return "";
-}
-
-function twoFactorMessage(status?: string) {
-  if (status === "updated") return "Two-factor preference updated.";
-  if (status === "authenticator-enabled") return "Authenticator app verification is enabled.";
-  if (status === "setup-required") return "Set up and verify an authenticator app first.";
-  if (status === "invalid-code") return "That authenticator code was not valid.";
-  if (status === "invalid") return "Choose a valid two-factor option.";
-  return "";
-}
-
-function paymentMessage(status?: string) {
-  if (status === "updated") return "Payment method saved.";
-  if (status === "deleted") return "Payment method removed.";
-  if (status === "invalid") return "Check the payment method details and try again.";
-  return "";
-}
-
-function discordMessage(status?: string) {
-  if (status === "linked") return "Discord account linked.";
-  if (status === "unlinked") return "Discord account unlinked.";
-  if (status === "invalid") return "That Discord link expired or was already used.";
-  return "";
-}
+import { accountFeedback } from "@/lib/user-messages";
 
 export default async function AccountPage({
   searchParams
@@ -87,11 +52,7 @@ export default async function AccountPage({
     }
   });
   const loginProviders = await enabledLoginProviders();
-  const profileStatus = profileMessage(query.profile);
-  const passwordStatus = passwordMessage(query.password);
-  const twoFactorStatus = twoFactorMessage(query.twoFactor);
-  const paymentStatus = paymentMessage(query.payment);
-  const discordStatus = discordMessage(query.discord);
+  const feedback = accountFeedback(query);
 
   return (
     <PageShell>
@@ -100,6 +61,7 @@ export default async function AccountPage({
         title="Settings"
         description="Manage your profile, password, display mode, and active session."
       />
+      <FeedbackAlert className="mb-4" feedback={feedback} />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_0.85fr]">
         <section className="card p-5">
@@ -107,17 +69,6 @@ export default async function AccountPage({
           <p className="mt-1 text-sm leading-6 text-muted">
             These details are used for login and account identification.
           </p>
-          {profileStatus ? (
-            <p
-              className={
-                query.profile === "updated"
-                  ? "mt-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean"
-                  : "mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral"
-              }
-            >
-              {profileStatus}
-            </p>
-          ) : null}
           <form className="mt-5 grid gap-4" action={updateAccountProfile}>
             <div>
               <label className="label" htmlFor="username">
@@ -189,17 +140,6 @@ export default async function AccountPage({
             Add external payment links or handles for trip members. TripTally never processes
             payments or stores payment credentials.
           </p>
-          {paymentStatus ? (
-            <p
-              className={
-                query.payment === "invalid"
-                  ? "mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral"
-                  : "mt-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean"
-              }
-            >
-              {paymentStatus}
-            </p>
-          ) : null}
           <form className="mt-5 grid gap-3 md:grid-cols-2" action={savePaymentMethod}>
             <div>
               <label className="label" htmlFor="payment-provider">
@@ -297,18 +237,6 @@ export default async function AccountPage({
             Add a second step to login with email codes or a six-digit code from an authenticator
             app.
           </p>
-          {twoFactorStatus ? (
-            <p
-              className={
-                query.twoFactor === "updated" || query.twoFactor === "authenticator-enabled"
-                  ? "mt-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean"
-                  : "mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral"
-              }
-            >
-              {twoFactorStatus}
-            </p>
-          ) : null}
-
           <form className="mt-5 grid gap-3 md:grid-cols-3" action={setTwoFactorMethod}>
             <label className="flex min-h-11 items-center gap-3 rounded-lg border border-line bg-surface px-3 py-3 text-sm">
               <input
@@ -404,17 +332,6 @@ export default async function AccountPage({
           <p className="mt-1 text-sm leading-6 text-muted">
             Discord linking is used by slash commands and never relies on matching emails.
           </p>
-          {discordStatus ? (
-            <p
-              className={
-                query.discord === "invalid"
-                  ? "mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral"
-                  : "mt-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean"
-              }
-            >
-              {discordStatus}
-            </p>
-          ) : null}
           <div className="mt-4 rounded-lg border border-line bg-surface p-3">
             {user.discordAccount ? (
               <>
@@ -489,17 +406,6 @@ export default async function AccountPage({
           <p className="mt-1 text-sm leading-6 text-muted">
             Enter your current password before choosing a new one.
           </p>
-          {passwordStatus ? (
-            <p
-              className={
-                query.password === "updated"
-                  ? "mt-4 rounded-lg bg-brand-soft p-3 text-sm text-ocean"
-                  : "mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral"
-              }
-            >
-              {passwordStatus}
-            </p>
-          ) : null}
           <form className="mt-5 grid gap-4 md:grid-cols-3" action={updateAccountPassword}>
             <div>
               <label className="label" htmlFor="currentPassword">
