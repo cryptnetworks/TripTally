@@ -1,11 +1,11 @@
 # Running with Docker
 
-TripTally is intended to run as a Docker container in production. The container starts as a non-root user, validates configuration, generates Prisma Client, applies Prisma migrations, and starts the Next.js production server.
+SeddleUp is intended to run as a Docker container in production. The container starts as a non-root user, validates configuration, generates Prisma Client, applies Prisma migrations, and starts the Next.js production server.
 
 ## Pull the Image
 
 ```bash
-docker pull ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+docker pull ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
 
 ## Prepare Environment
@@ -41,7 +41,7 @@ docker run --name triptally \
   -p 3000:3000 \
   -v triptally_data:/app/data \
   --env-file .env \
-  ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+  ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
 ```
 
 Open `http://localhost:3000`.
@@ -56,7 +56,7 @@ The Docker image also defines a healthcheck that calls `/api/health` every 30 se
 
 ## Run with Docker Compose
 
-The included Compose file builds the local Dockerfile by default and runs TripTally privately on the Docker network:
+The included Compose file builds the local Dockerfile by default and runs SeddleUp privately on the Docker network:
 
 ```bash
 docker compose up -d --build triptally
@@ -69,7 +69,7 @@ To use the pinned GHCR image instead of building locally, override the service i
 ```yaml
 services:
   triptally:
-    image: ghcr.io/cryptnetworks/triptally:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
+    image: ghcr.io/cryptnetworks/seddleup:sha-292a632@sha256:9a2387e29e29bf862a056619192a3cf3256b74a5d4fc67e97467321c43957207
     build: null
 ```
 

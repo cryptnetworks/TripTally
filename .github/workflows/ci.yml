@@ -71,4 +71,4 @@ jobs:
         run: npm run build
 
       - name: Docker build
-        run: docker build -t triptally:ci .
+        run: docker build -t seddleup:ci .

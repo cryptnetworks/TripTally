@@ -12,7 +12,7 @@ The first registered user becomes the bootstrap administrator. Admin pages are a
 
 ## OAuth Providers
 
-TripTally supports configurable OAuth login for:
+SeddleUp supports configurable OAuth login for:
 
 - Google
 - GitHub
@@ -36,8 +36,8 @@ Replace `app.example.com` with your public domain.
 
 ## Account Linking
 
-Signed-in users can link OAuth providers from the account page. TripTally prevents removing the final login method for an account.
+Signed-in users can link OAuth providers from the account page. SeddleUp prevents removing the final login method for an account.
 
 ## Token Handling
 
-TripTally does not store provider access or refresh tokens. OAuth login creates a local short-lived, single-use handoff token in an HTTP-only cookie. That token is consumed to create the app session and then invalidated.
+SeddleUp does not store provider access or refresh tokens. OAuth login creates a local short-lived, single-use handoff token in an HTTP-only cookie. That token is consumed to create the app session and then invalidated.

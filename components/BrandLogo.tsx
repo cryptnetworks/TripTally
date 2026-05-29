@@ -16,12 +16,12 @@ export function BrandLogo({
 }: BrandLogoProps) {
   const image = (
     <Image
-      src={compact ? "/branding/logo-icon.png" : "/branding/logo.png"}
-      alt="Trip Tally"
-      width={compact ? 512 : 1129}
-      height={compact ? 512 : 411}
+      src={compact ? "/mark-512.png" : "/logo.png"}
+      alt="SeddleUp"
+      width={compact ? 512 : 1160}
+      height={compact ? 512 : 360}
       priority={priority}
-      className={compact ? "h-10 w-10 rounded-md object-cover" : "h-auto w-full object-contain"}
+      className={compact ? "h-9 w-9 object-contain" : "h-auto w-full object-contain"}
       sizes={compact ? "40px" : "(min-width: 768px) 220px, 170px"}
     />
   );
@@ -44,7 +44,7 @@ export function BrandLogo({
   }
 
   return (
-    <Link href={href} aria-label="Trip Tally home" className="inline-flex">
+    <Link href={href} aria-label="SeddleUp home" className="inline-flex">
       {content}
     </Link>
   );

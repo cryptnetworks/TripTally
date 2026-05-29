@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible TripTally bug.
+description: Report a reproducible SeddleUp bug.
 title: "[Bug]: "
 labels: ["bug"]
 body:

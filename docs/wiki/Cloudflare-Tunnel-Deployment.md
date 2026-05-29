@@ -1,6 +1,6 @@
 # Cloudflare Tunnel Deployment
 
-Cloudflare Tunnel publishes TripTally without opening inbound ports on the server. The `cloudflared` container makes an outbound connection to Cloudflare and forwards traffic to `http://triptally:3000` on the Docker network.
+Cloudflare Tunnel publishes SeddleUp without opening inbound ports on the server. The `cloudflared` container makes an outbound connection to Cloudflare and forwards traffic to `http://triptally:3000` on the Docker network.
 
 ## Environment
 

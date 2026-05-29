@@ -91,7 +91,7 @@ async function providerProfile(
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: "application/json",
-      "User-Agent": "TripTally"
+      "User-Agent": "SeddleUp"
     }
   });
   if (!response.ok) return null;

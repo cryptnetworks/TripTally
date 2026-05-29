@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">SeddleUp App Icon</title>
+  <desc id="desc">Rounded square SeddleUp app icon with route-shaped S.</desc>
+  <defs>
+    <linearGradient id="bg" x1="96" y1="928" x2="928" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="192" y1="832" x2="832" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1D4ED8"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#bg)"/>
+  <g transform="translate(128 108) scale(1.5)">
+    <path d="M354 86c-54 0-100 17-138 50-31 27-43 60-31 87 16 36 61 43 103 51 43 8 84 15 91 44 5 19-7 39-34 56-32 20-82 31-145 31H94"
+        fill="none" stroke="url(#blueGrad)" stroke-width="72" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M354 86c-54 0-100 17-138 50-31 27-43 60-31 87 16 36 61 43 103 51 43 8 84 15 91 44 5 19-7 39-34 56-32 20-82 31-145 31H94"
+        fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="34 30" opacity=".9"/>
+    <circle cx="94" cy="405" r="29" fill="#0F172A"/>
+    <circle cx="94" cy="405" r="15" fill="#FFFFFF"/>
+    <path d="M390 52c-39 0-70 31-70 70 0 52 70 126 70 126s70-74 70-126c0-39-31-70-70-70z" fill="#2563EB"/>
+    <circle cx="390" cy="122" r="24" fill="#FFFFFF"/>
+  </g>
+</svg>

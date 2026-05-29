@@ -31,7 +31,7 @@ export default function Error({
         <p className="text-xs font-bold uppercase tracking-normal text-coral">
           Something went wrong
         </p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">Trip Tally could not load this view.</h1>
+        <h1 className="mt-2 text-2xl font-bold text-ink">SeddleUp could not load this view.</h1>
         <p className="mt-3 text-sm leading-6 text-muted">
           Try again. If the problem continues, check the server logs for the error digest.
         </p>

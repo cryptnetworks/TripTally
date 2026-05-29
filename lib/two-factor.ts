@@ -83,7 +83,7 @@ export async function createAuthenticatorSetup(user: { id: string; email: string
   return {
     secret,
     uri: buildAuthenticatorUri({
-      appName: process.env.EMAIL_APP_NAME || "Trip Tally",
+      appName: process.env.EMAIL_APP_NAME || "SeddleUp",
       email: user.email,
       secret
     })

@@ -8,7 +8,7 @@ export function BrandLoading() {
         <div
           className="h-11 w-11 animate-spin rounded-full border-4 border-ocean/20 border-t-ocean"
           role="status"
-          aria-label="Loading Trip Tally"
+          aria-label="Loading SeddleUp"
         />
       </div>
     </main>

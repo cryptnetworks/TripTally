@@ -2,26 +2,30 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Trip Tally",
-    short_name: "Trip Tally",
-    description: "Track travel expenses and split trip costs easily.",
-    start_url: "/dashboard",
+    name: "SeddleUp",
+    short_name: "SeddleUp",
+    description: "Travel together. Settle up easily.",
+    start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#f7f9fb",
-    theme_color: "#0f766e",
+    background_color: "#F8FAFC",
+    theme_color: "#0F172A",
     icons: [
       {
-        src: "/branding/logo-icon.png",
+        src: "/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png"
+      },
+      {
+        src: "/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png"
+      },
+      {
+        src: "/maskable-icon-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable"
-      },
-      {
-        src: "/branding/apple-touch-icon.png",
-        sizes: "180x180",
-        type: "image/png",
-        purpose: "any"
       }
     ]
   };

@@ -1,6 +1,6 @@
 # Email and MFA
 
-TripTally uses email for:
+SeddleUp uses email for:
 
 - Account verification
 - Password reset links
@@ -18,7 +18,7 @@ SMTP_SECURE=false
 SMTP_USER=your-smtp-username
 SMTP_PASSWORD=your-smtp-password
 SMTP_FROM=no-reply@app.example.com
-EMAIL_APP_NAME="Trip Tally"
+EMAIL_APP_NAME="SeddleUp"
 PASSWORD_RESET_TOKEN_MINUTES=45
 ```
 

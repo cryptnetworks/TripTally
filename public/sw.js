@@ -1,5 +1,5 @@
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open("triptally-v1").then((cache) => cache.addAll(["/offline"])));
+  event.waitUntil(caches.open("seddleup-v1").then((cache) => cache.addAll(["/offline"])));
   self.skipWaiting();
 });
 

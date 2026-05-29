@@ -18,7 +18,7 @@ export default async function VerifyEmailPage({
         </div>
         <h1 className="text-center text-3xl font-bold text-ink">Verify your email</h1>
         <p className="mt-2 text-sm text-muted">
-          Email verification is required before you can sign in to Trip Tally.
+          Email verification is required before you can sign in to SeddleUp.
         </p>
         {query.error ? (
           <p className="mt-4 rounded-lg border border-line bg-surface p-3 text-sm text-coral">

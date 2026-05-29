@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return ok({ service: "triptally" }, { time: new Date().toISOString() });
+    return ok({ service: "seddleup" }, { time: new Date().toISOString() });
   } catch (error) {
     logger.error("healthcheck.failed", {
       error: error instanceof Error ? error.message : "Unknown error"
