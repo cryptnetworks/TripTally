@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 @theme {
+  --color-primary: var(--app-primary);
+  --color-secondary: var(--app-secondary);
+  --color-accent: var(--app-accent);
+  --color-accent-dark: var(--app-accent-dark);
+  --color-success: var(--app-success);
   --color-ink: var(--app-ink);
   --color-muted: var(--app-muted);
   --color-line: var(--app-line);
@@ -12,11 +17,16 @@
 }
 
 :root {
+  --app-primary: #0f172a;
+  --app-secondary: #1e293b;
+  --app-accent: #2563eb;
+  --app-accent-dark: #1d4ed8;
+  --app-success: #10b981;
   --app-ink: #111827;
   --app-muted: #64748b;
   --app-line: #cbd5e1;
   --app-surface: #f8fafc;
-  --app-ocean: #2563eb;
+  --app-ocean: var(--app-accent);
   --app-coral: #dc2626;
   --app-brand-soft: #dbeafe;
   --app-page-start: #ffffff;
@@ -30,11 +40,16 @@
 }
 
 .dark {
+  --app-primary: #0f172a;
+  --app-secondary: #1e293b;
+  --app-accent: #2563eb;
+  --app-accent-dark: #1d4ed8;
+  --app-success: #10b981;
   --app-ink: #f8fafc;
   --app-muted: #cbd5e1;
   --app-line: #334155;
   --app-surface: #0f172a;
-  --app-ocean: #60a5fa;
+  --app-ocean: var(--app-accent);
   --app-coral: #f87171;
   --app-brand-soft: #1e293b;
   --app-page-start: #020617;
@@ -77,11 +92,11 @@ textarea {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-ocean px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2;
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
     background-color: var(--app-card-solid);
   }
 
@@ -90,7 +105,7 @@ textarea {
   }
 
   .field {
-    @apply w-full rounded-lg border border-line px-3 py-3 text-base text-ink outline-none transition placeholder:text-slate-400 focus:border-ocean focus:ring-2 focus:ring-ocean/20;
+    @apply w-full rounded-lg border border-line px-3 py-3 text-base text-ink outline-none transition placeholder:text-slate-400 focus:border-accent focus:ring-2 focus:ring-accent/20;
     background-color: var(--app-card-solid);
   }
 
